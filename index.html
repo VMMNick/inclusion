@@ -1,0 +1,2016 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Лабораторія логіки та сортування</title>
+  <meta name="description" content="Навчальний вебдодаток з логіки та інформатики для учнів 3–5 класів" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Nunito', 'system-ui', 'sans-serif'] },
+          colors: {
+            cream: '#FFFBF5',
+            ink: '#3C4858',
+            // Пастельна палітра (8 тем) — без різких контрастів і агресивного червоного
+            sky:      { soft: '#E8F3FC', mid: '#C5E0F7', deep: '#4F7FA8' },
+            mint:     { soft: '#E8F6EE', mid: '#C3EBD3', deep: '#3F8A63' },
+            lavender: { soft: '#F2EDFA', mid: '#DCD0F2', deep: '#6E5A9C' },
+            butter:   { soft: '#FFF8E3', mid: '#FBE7AE', deep: '#8A6A12' },
+            peach:    { soft: '#FDF0E8', mid: '#F6D5C2', deep: '#9C5F3F' },
+            rose:     { soft: '#FCEFF3', mid: '#F3D0DC', deep: '#94566E' },
+            teal:     { soft: '#E6F5F4', mid: '#BDE5E1', deep: '#367A73' },
+            lime:     { soft: '#F2F8E4', mid: '#DAECB6', deep: '#5B7623' }
+          },
+          borderRadius: { '4xl': '2rem' }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    body { font-family: 'Nunito', system-ui, sans-serif; }
+
+    :focus { outline: none; }
+    :focus-visible {
+      outline: 4px solid #6E5A9C;
+      outline-offset: 3px;
+      border-radius: 1rem;
+    }
+
+    .card {
+      transition: transform .15s ease, box-shadow .15s ease, background-color .15s ease;
+      touch-action: manipulation;
+    }
+    .card:hover { transform: translateY(-2px); }
+    .card.is-selected {
+      box-shadow: 0 0 0 4px #6E5A9C;
+      background-color: #F2EDFA;
+    }
+    .card.is-dragging { opacity: .5; }
+    .needs-review {
+      border: 3px dashed #D9B44A !important;
+      background-color: #FFF8E3 !important;
+    }
+
+    .zone { transition: background-color .15s ease, border-color .15s ease, filter .15s ease; }
+    .zone.is-over { border-style: solid; filter: brightness(0.96); }
+    .zone.is-target { border-style: solid; }
+
+    .robot-cell { transition: background-color .2s ease; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+      .card:hover { transform: none; }
+    }
+
+    @media print {
+      header, footer, .no-print { display: none !important; }
+      body { background: #fff !important; }
+      main { padding: 0 !important; }
+      #step-cert { display: block !important; }
+    }
+    @media print {
+      body.modal-open > header, body.modal-open > main, body.modal-open > footer { display: none !important; }
+      body.modal-open #cert-modal { position: static !important; background: none !important; padding: 0 !important; overflow: visible !important; }
+      #cert-modal .no-print { display: none !important; }
+    }
+    @media (prefers-reduced-motion: reduce) { .animate-pulse { animation: none !important; } }
+  </style>
+</head>
+
+<body class="bg-cream text-ink min-h-screen flex flex-col">
+
+  <!-- ===== Верхня панель: кроки + звук ===== -->
+  <header class="bg-white/90 border-b-2 border-lavender-mid sticky top-0 z-10">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <span class="text-3xl" aria-hidden="true">🧪</span>
+        <span class="font-extrabold text-lg sm:text-xl">Лабораторія логіки</span>
+      </div>
+
+      <button id="sound-toggle" type="button" aria-pressed="false"
+        class="flex items-center gap-2 px-4 py-2 rounded-full bg-sky-soft border-2 border-sky-mid font-bold hover:bg-sky-mid lg:order-last">
+        <span id="sound-icon" aria-hidden="true">🔇</span>
+        <span id="sound-label">Звук вимкнено</span>
+      </button>
+
+      <nav aria-label="Кроки уроку" class="w-full lg:w-auto">
+        <ol id="stepper" class="flex flex-wrap items-center justify-center gap-1 sm:gap-1.5"></ol>
+      </nav>
+    </div>
+  </header>
+
+  <main class="flex-1 w-full max-w-6xl mx-auto px-4 py-6 sm:py-10">
+
+    <!-- ===== Крок 1: Вітання ===== -->
+    <section id="step-1" aria-labelledby="h-step-1" class="step-section">
+      <div class="bg-white rounded-4xl border-2 border-lavender-mid p-6 sm:p-10 text-center shadow-sm">
+        <div class="text-7xl mb-4" aria-hidden="true">🤖</div>
+        <h1 id="h-step-1" tabindex="-1" class="text-3xl sm:text-4xl font-extrabold mb-4">Привіт, досліднику!</h1>
+        <p class="text-xl mb-6 max-w-2xl mx-auto">Обери завдання, які хочеш пройти. Натисни на картку, щоб увімкнути або вимкнути її. Поспішати не треба — працюй у своєму темпі.</p>
+
+        <div class="flex flex-wrap justify-center gap-3 mb-5">
+          <button id="pick-all" type="button" class="px-5 py-2 rounded-full bg-white border-2 border-mint-mid font-bold hover:bg-mint-soft">✅ Обрати всі</button>
+          <button id="pick-none" type="button" class="px-5 py-2 rounded-full bg-white border-2 border-peach-mid font-bold hover:bg-peach-soft">⬜ Зняти всі</button>
+        </div>
+
+        <div id="task-picker" role="group" aria-label="Оберіть завдання"
+          class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-w-6xl mx-auto mb-5 text-left"></div>
+
+        <p id="pick-count" class="text-lg font-bold mb-4" aria-live="polite"></p>
+        <p class="text-base mb-6 text-ink/80">Звук можна увімкнути кнопкою вгорі 🔈</p>
+
+        <button id="start-btn" type="button"
+          class="px-10 py-4 rounded-full bg-lavender-deep text-white text-xl font-extrabold hover:opacity-90 shadow disabled:opacity-40 disabled:cursor-not-allowed">
+          Почати ▶
+        </button>
+      </div>
+    </section>
+
+    <!-- ===== Крок 2: Класифікація ===== -->
+    <section id="step-2" aria-labelledby="h-step-2" class="step-section hidden">
+      <h2 id="h-step-2" tabindex="-1" class="text-2xl sm:text-3xl font-extrabold mb-2">🗂️ Розклади картки</h2>
+      <p class="text-lg mb-4"><b>Як?</b> Перетягни картку в коробку. <b>Або</b> натисни на картку, а потім — на коробку.</p>
+
+      <fieldset class="mb-5">
+        <legend class="font-bold mb-2">Скільки коробок?</legend>
+        <div id="level-picker" class="flex flex-wrap gap-3"></div>
+      </fieldset>
+
+      <div id="zone-pool" data-zone="pool" role="button" tabindex="0"
+        aria-label="Нерозподілені картки. Натисни, щоб повернути обрану картку сюди."
+        class="zone rounded-3xl border-2 border-dashed border-lavender-mid bg-white p-4 mb-5 min-h-[7rem]">
+        <p class="font-bold mb-3">📦 Картки <span id="pool-count" class="text-ink/70"></span></p>
+        <div class="zone-items flex flex-wrap gap-3"></div>
+      </div>
+
+      <div id="zones" class="grid gap-5"></div>
+
+      <div id="sort-feedback" role="status" aria-live="polite" class="mt-5"></div>
+
+      <div class="mt-6 flex flex-wrap gap-3 justify-between">
+        <button type="button" data-nav="prev" class="btn-back px-6 py-3 rounded-full bg-white border-2 border-lavender-mid font-bold hover:bg-lavender-soft">◀ Назад</button>
+        <div class="flex flex-wrap gap-3">
+          <button id="sort-reset" type="button" class="px-6 py-3 rounded-full bg-white border-2 border-peach-mid font-bold hover:bg-peach-soft">↺ Почати знову</button>
+          <button id="sort-check" type="button" class="px-6 py-3 rounded-full bg-sky-deep text-white font-extrabold hover:opacity-90">🔍 Перевірити</button>
+          <button id="sort-next" type="button" data-nav="next" disabled class="px-6 py-3 rounded-full bg-lavender-deep text-white font-extrabold hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed">Далі ▶</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Крок 3: Алгоритм ===== -->
+    <section id="step-3" aria-labelledby="h-step-3" class="step-section hidden">
+      <h2 id="h-step-3" tabindex="-1" class="text-2xl sm:text-3xl font-extrabold mb-2">🪜 Склади алгоритм</h2>
+      <p class="text-lg mb-4"><b>Алгоритм</b> — це кроки, які йдуть один за одним. Став кроки по порядку кнопками ⬆️ і ⬇️.</p>
+
+      <fieldset class="mb-5">
+        <legend class="font-bold mb-2">Обери тему:</legend>
+        <div id="algo-topics" class="flex flex-wrap gap-3"></div>
+      </fieldset>
+
+      <p class="text-xl font-extrabold mb-4">Тема: «<span id="algo-title"></span>»</p>
+
+      <ol id="sequence-list" class="space-y-3" aria-label="Кроки алгоритму"></ol>
+
+      <div id="seq-feedback" role="status" aria-live="polite" class="mt-5"></div>
+
+      <div class="mt-6 flex flex-wrap gap-3 justify-between">
+        <button type="button" data-nav="prev" class="px-6 py-3 rounded-full bg-white border-2 border-lavender-mid font-bold hover:bg-lavender-soft">◀ Назад</button>
+        <div class="flex flex-wrap gap-3">
+          <button id="seq-reset" type="button" class="px-6 py-3 rounded-full bg-white border-2 border-peach-mid font-bold hover:bg-peach-soft">↺ Почати знову</button>
+          <button id="seq-check" type="button" class="px-6 py-3 rounded-full bg-sky-deep text-white font-extrabold hover:opacity-90">🔍 Перевірити</button>
+          <button id="seq-next" type="button" data-nav="next" disabled class="px-6 py-3 rounded-full bg-lavender-deep text-white font-extrabold hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed">Далі ▶</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Крок 4: Знайди зайве ===== -->
+    <section id="step-4" aria-labelledby="h-step-4" class="step-section hidden">
+      <h2 id="h-step-4" tabindex="-1" class="text-2xl sm:text-3xl font-extrabold mb-2">🔎 Знайди зайве</h2>
+      <p class="text-lg mb-5">Одна картинка тут не підходить до інших. Натисни на неї.</p>
+      <div data-quiz="odd"></div>
+      <div class="mt-6 flex flex-wrap gap-3 justify-between">
+        <button type="button" data-nav="prev" class="px-6 py-3 rounded-full bg-white border-2 border-lavender-mid font-bold hover:bg-lavender-soft">◀ Назад</button>
+        <button id="odd-next" type="button" data-nav="next" disabled class="px-6 py-3 rounded-full bg-lavender-deep text-white font-extrabold hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed">Далі ▶</button>
+      </div>
+    </section>
+
+    <!-- ===== Крок 5: Закономірності ===== -->
+    <section id="step-5" aria-labelledby="h-step-5" class="step-section hidden">
+      <h2 id="h-step-5" tabindex="-1" class="text-2xl sm:text-3xl font-extrabold mb-2">🔁 Що буде далі?</h2>
+      <p class="text-lg mb-5">Подивись на ряд. Що має стояти замість знака <b>?</b></p>
+      <div data-quiz="pattern"></div>
+      <div class="mt-6 flex flex-wrap gap-3 justify-between">
+        <button type="button" data-nav="prev" class="px-6 py-3 rounded-full bg-white border-2 border-lavender-mid font-bold hover:bg-lavender-soft">◀ Назад</button>
+        <button id="pattern-next" type="button" data-nav="next" disabled class="px-6 py-3 rounded-full bg-lavender-deep text-white font-extrabold hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed">Далі ▶</button>
+      </div>
+    </section>
+
+    <!-- ===== Крок 6: Правда чи ні ===== -->
+    <section id="step-6" aria-labelledby="h-step-6" class="step-section hidden">
+      <h2 id="h-step-6" tabindex="-1" class="text-2xl sm:text-3xl font-extrabold mb-2">🤔 Правда чи ні?</h2>
+      <p class="text-lg mb-5">Прочитай речення. Якщо воно правильне — натисни 👍, якщо ні — 👎.</p>
+      <div data-quiz="truth"></div>
+      <div class="mt-6 flex flex-wrap gap-3 justify-between">
+        <button type="button" data-nav="prev" class="px-6 py-3 rounded-full bg-white border-2 border-lavender-mid font-bold hover:bg-lavender-soft">◀ Назад</button>
+        <button id="truth-next" type="button" data-nav="next" disabled class="px-6 py-3 rounded-full bg-lavender-deep text-white font-extrabold hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed">Далі ▶</button>
+      </div>
+    </section>
+
+    <!-- ===== Крок 7: Робот ===== -->
+    <section id="step-7" aria-labelledby="h-step-7" class="step-section hidden">
+      <h2 id="h-step-7" tabindex="-1" class="text-2xl sm:text-3xl font-extrabold mb-2">🤖 Робот-помічник</h2>
+      <p class="text-lg mb-4">Склади програму зі стрілок, щоб робот 🤖 дійшов до зірочки ⭐. Каміння 🪨 треба обходити.</p>
+
+      <div class="flex items-center gap-3 mb-4">
+        <div id="robot-dots" class="flex gap-2" aria-hidden="true"></div>
+        <span id="robot-level-label" class="font-bold"></span>
+      </div>
+
+      <div class="grid lg:grid-cols-2 gap-6 items-start">
+        <div id="robot-grid" role="img"
+          class="grid grid-cols-5 gap-1.5 sm:gap-2 bg-lavender-soft p-2 sm:p-3 rounded-3xl border-2 border-lavender-mid w-full max-w-[26rem] mx-auto"></div>
+
+        <div>
+          <p class="font-bold mb-2">1) Натискай стрілки — так ти пишеш програму:</p>
+          <div class="grid grid-cols-4 gap-3 max-w-xs mb-5">
+            <button type="button" data-cmd="up"    aria-label="Додати крок вгору"    class="h-16 rounded-2xl bg-sky-soft border-2 border-sky-mid text-3xl hover:bg-sky-mid disabled:opacity-40">⬆️</button>
+            <button type="button" data-cmd="down"  aria-label="Додати крок вниз"     class="h-16 rounded-2xl bg-sky-soft border-2 border-sky-mid text-3xl hover:bg-sky-mid disabled:opacity-40">⬇️</button>
+            <button type="button" data-cmd="left"  aria-label="Додати крок ліворуч"  class="h-16 rounded-2xl bg-sky-soft border-2 border-sky-mid text-3xl hover:bg-sky-mid disabled:opacity-40">⬅️</button>
+            <button type="button" data-cmd="right" aria-label="Додати крок праворуч" class="h-16 rounded-2xl bg-sky-soft border-2 border-sky-mid text-3xl hover:bg-sky-mid disabled:opacity-40">➡️</button>
+          </div>
+
+          <p class="font-bold mb-2">Програма робота (кроків: <span id="robot-count">0</span>):</p>
+          <ol id="robot-program" aria-label="Програма робота"
+            class="flex flex-wrap gap-2 min-h-[4rem] p-3 bg-white rounded-2xl border-2 border-dashed border-lavender-mid mb-4"></ol>
+
+          <p class="font-bold mb-2">2) Запусти робота:</p>
+          <div class="flex flex-wrap gap-3">
+            <button id="robot-run" type="button" class="px-6 py-3 rounded-full bg-mint-deep text-white font-extrabold hover:opacity-90 disabled:opacity-40">▶ Запустити</button>
+            <button id="robot-undo" type="button" class="px-5 py-3 rounded-full bg-white border-2 border-peach-mid font-bold hover:bg-peach-soft disabled:opacity-40">↶ Прибрати останній</button>
+            <button id="robot-clear" type="button" class="px-5 py-3 rounded-full bg-white border-2 border-peach-mid font-bold hover:bg-peach-soft disabled:opacity-40">🧹 Очистити</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="robot-feedback" role="status" aria-live="polite" class="mt-5"></div>
+
+      <div class="mt-6 flex flex-wrap gap-3 justify-between">
+        <button type="button" data-nav="prev" class="px-6 py-3 rounded-full bg-white border-2 border-lavender-mid font-bold hover:bg-lavender-soft">◀ Назад</button>
+        <button id="robot-next" type="button" data-nav="next" disabled class="px-6 py-3 rounded-full bg-lavender-deep text-white font-extrabold hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed">Далі ▶</button>
+      </div>
+    </section>
+
+    <!-- ===== Крок 8: Машини та марки ===== -->
+    <section id="step-8" aria-labelledby="h-step-8" class="step-section hidden">
+      <h2 id="h-step-8" tabindex="-1" class="text-2xl sm:text-3xl font-extrabold mb-2">🚗 Машини та марки</h2>
+      <p class="text-lg mb-4">Спочатку познайомся з машинами. Потім відгадай марку за фото.</p>
+
+      <div class="flex flex-wrap gap-3 mb-5" role="tablist" aria-label="Частини завдання">
+        <button type="button" role="tab" data-car-tab="learn" id="tab-learn" aria-controls="cars-learn"
+          class="px-5 py-3 rounded-full border-2 font-bold text-lg">📖 1. Знайомство</button>
+        <button type="button" role="tab" data-car-tab="quiz" id="tab-quiz" aria-controls="cars-quiz"
+          class="px-5 py-3 rounded-full border-2 font-bold text-lg">❓ 2. Вікторина</button>
+      </div>
+
+      <div id="cars-learn" role="tabpanel" aria-labelledby="tab-learn">
+        <div id="car-gallery" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+        <div class="mt-6 text-center">
+          <button type="button" data-car-tab="quiz"
+            class="px-8 py-4 rounded-full bg-lime-deep text-white text-lg font-extrabold hover:opacity-90">Я готовий! До вікторини ▶</button>
+        </div>
+      </div>
+
+      <div id="cars-quiz" role="tabpanel" aria-labelledby="tab-quiz" class="hidden">
+        <div data-quiz="cars"></div>
+      </div>
+
+      <p class="mt-5 text-sm text-ink/60">📷 Фото завантажуються з Вікіпедії (Wikimedia Commons), тому для них потрібен інтернет. Натисни на підпис під фото, щоб побачити автора і ліцензію.</p>
+
+      <div class="mt-6 flex flex-wrap gap-3 justify-between">
+        <button type="button" data-nav="prev" class="px-6 py-3 rounded-full bg-white border-2 border-lavender-mid font-bold hover:bg-lavender-soft">◀ Назад</button>
+        <button id="cars-next" type="button" data-nav="next" disabled class="px-6 py-3 rounded-full bg-lavender-deep text-white font-extrabold hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed">Далі ▶</button>
+      </div>
+    </section>
+
+    <!-- ===== Крок 9: Сертифікат ===== -->
+    <section id="step-cert" aria-labelledby="h-step-cert" class="step-section hidden">
+      <div class="no-print mb-5 max-w-2xl mx-auto">
+        <label for="student-name" class="block text-lg font-bold mb-2">✏️ Напиши своє ім’я для нагороди (можна пропустити):</label>
+        <input id="student-name" type="text" maxlength="40" autocomplete="off"
+          class="w-full text-xl px-5 py-3 rounded-2xl border-2 border-lavender-mid bg-white focus-visible:border-lavender-deep"
+          placeholder="Наприклад: Олеся" />
+      </div>
+
+      <div class="max-w-2xl mx-auto bg-white rounded-4xl border-[6px] border-double border-butter-mid p-8 sm:p-12 text-center shadow-sm">
+        <div class="text-7xl mb-3" aria-hidden="true">🏅</div>
+        <p class="uppercase tracking-widest font-bold text-butter-deep mb-2">Нагорода</p>
+        <h2 id="h-step-cert" tabindex="-1" class="text-3xl sm:text-4xl font-extrabold mb-4">Магістр Логіки</h2>
+        <p class="text-lg mb-2">Цю нагороду отримує</p>
+        <p id="cert-name" class="text-3xl font-extrabold text-lavender-deep border-b-2 border-lavender-mid inline-block min-w-[12rem] pb-1 mb-6">Дослідник</p>
+        <ul id="cert-skills" class="text-lg space-y-1 mb-4 text-left inline-block"></ul>
+        <div><p id="cert-level" class="inline-block rounded-full px-4 py-1 font-bold mb-4"></p></div>
+        <p class="text-base text-ink/70" id="cert-date"></p>
+      </div>
+
+      <div class="no-print mt-8 max-w-3xl mx-auto">
+        <h3 class="text-xl font-extrabold mb-3 text-center">📜 Твої сертифікати за категоріями</h3>
+        <div id="cert-badges" class="flex flex-wrap gap-3 justify-center"></div>
+      </div>
+      <div class="no-print mt-8 flex flex-wrap gap-3 justify-center">
+        <button type="button" data-nav="prev" class="px-6 py-3 rounded-full bg-white border-2 border-lavender-mid font-bold hover:bg-lavender-soft">◀ Назад</button>
+        <button id="print-btn" type="button" class="px-6 py-3 rounded-full bg-butter-mid font-extrabold hover:bg-butter-soft border-2 border-butter-mid">🖨️ Надрукувати</button>
+        <button id="restart-btn" type="button" class="px-6 py-3 rounded-full bg-lavender-deep text-white font-extrabold hover:opacity-90">🔁 Пройти ще раз</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===== Вікно тематичного сертифіката ===== -->
+  <div id="cert-modal" class="hidden fixed inset-0 z-50 bg-ink/40 overflow-y-auto p-4" role="dialog" aria-modal="true" aria-labelledby="cm-title">
+    <div class="max-w-2xl mx-auto my-6">
+      <div id="cm-card"></div>
+      <div class="no-print mt-4 bg-white rounded-3xl border-2 border-lavender-mid p-4 sm:p-5">
+        <label for="cm-name" class="block text-lg font-bold mb-2">✏️ Твоє ім’я на сертифікаті:</label>
+        <input id="cm-name" type="text" maxlength="40" autocomplete="off" placeholder="Наприклад: Олеся"
+          class="w-full text-xl px-5 py-3 rounded-2xl border-2 border-lavender-mid bg-white mb-4" />
+        <div class="flex flex-wrap gap-3 justify-center">
+          <button id="cm-print" type="button" class="px-6 py-3 rounded-full bg-butter-mid border-2 border-butter-mid font-extrabold hover:bg-butter-soft">🖨️ Надрукувати</button>
+          <button id="cm-close" type="button" class="px-6 py-3 rounded-full bg-lavender-deep text-white font-extrabold hover:opacity-90">✖ Закрити</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="text-center text-sm text-ink/60 py-4 border-t-2 border-lavender-soft">
+    Лабораторія логіки та сортування · v1.7.0 · без таймерів, у своєму темпі 🌱
+  </footer>
+
+<script>
+(() => {
+  'use strict';
+
+  /* =========================================================
+     Колірні теми (повні рядки класів — для Tailwind)
+     ========================================================= */
+  const THEMES = {
+    sky:      { zone: 'bg-sky-soft border-sky-mid',           title: 'text-sky-deep',      card: 'border-sky-mid',      chip: 'bg-sky-mid' },
+    mint:     { zone: 'bg-mint-soft border-mint-mid',         title: 'text-mint-deep',     card: 'border-mint-mid',     chip: 'bg-mint-mid' },
+    lavender: { zone: 'bg-lavender-soft border-lavender-mid', title: 'text-lavender-deep', card: 'border-lavender-mid', chip: 'bg-lavender-mid' },
+    butter:   { zone: 'bg-butter-soft border-butter-mid',     title: 'text-butter-deep',   card: 'border-butter-mid',   chip: 'bg-butter-mid' },
+    peach:    { zone: 'bg-peach-soft border-peach-mid',       title: 'text-peach-deep',    card: 'border-peach-mid',    chip: 'bg-peach-mid' },
+    rose:     { zone: 'bg-rose-soft border-rose-mid',         title: 'text-rose-deep',     card: 'border-rose-mid',     chip: 'bg-rose-mid' },
+    teal:     { zone: 'bg-teal-soft border-teal-mid',         title: 'text-teal-deep',     card: 'border-teal-mid',     chip: 'bg-teal-mid' },
+    lime:     { zone: 'bg-lime-soft border-lime-mid',         title: 'text-lime-deep',     card: 'border-lime-mid',     chip: 'bg-lime-mid' }
+  };
+
+
+  /* =========================================================
+     ДАНІ: Завдання 1 — Сортування (рівні = кількість категорій)
+     Щоб додати категорію або рівень — допишіть об'єкт у масив.
+     ========================================================= */
+  const SORTING_LEVELS = [
+    {
+      id: 'easy', icon: '🌱', label: 'Легко', grade: '3 клас',
+      skill: 'розрізняє апаратне і програмне забезпечення',
+      categories: [
+        { id: 'hardware', name: 'Апаратне забезпечення', emoji: '🖐️', theme: 'sky',  hint: 'Те, що можна торкнутися рукою.' },
+        { id: 'software', name: 'Програмне забезпечення', emoji: '💿', theme: 'mint', hint: 'Програми, що працюють усередині комп’ютера.' }
+      ],
+      items: [
+        { id: 'monitor',  name: 'Монітор',                emoji: '🖥️', category: 'hardware' },
+        { id: 'keyboard', name: 'Клавіатура',             emoji: '⌨️', category: 'hardware' },
+        { id: 'mouse',    name: 'Мишка',                  emoji: '🖱️', category: 'hardware' },
+        { id: 'printer',  name: 'Принтер',                emoji: '🖨️', category: 'hardware' },
+        { id: 'headset',  name: 'Навушники',              emoji: '🎧', category: 'hardware' },
+        { id: 'browser',  name: 'Браузер',                emoji: '🌐', category: 'software' },
+        { id: 'game',     name: 'Комп’ютерна гра',        emoji: '👾', category: 'software' },
+        { id: 'paint',    name: 'Програма для малювання', emoji: '🎨', category: 'software' },
+        { id: 'writer',   name: 'Текстовий редактор',     emoji: '📝', category: 'software' },
+        { id: 'player',   name: 'Музичний плеєр',         emoji: '🎵', category: 'software' }
+      ]
+    },
+    {
+      id: 'medium', icon: '🌿', label: 'Середньо', grade: '4 клас',
+      skill: 'розрізняє пристрої введення, виведення і програми',
+      categories: [
+        { id: 'input',    name: 'Пристрої введення',  emoji: '📥', theme: 'peach',    hint: 'Передають інформацію В комп’ютер.' },
+        { id: 'output',   name: 'Пристрої виведення', emoji: '📤', theme: 'teal',     hint: 'Показують або озвучують інформацію З комп’ютера.' },
+        { id: 'software', name: 'Програми',           emoji: '💿', theme: 'lavender', hint: 'Їх не можна торкнутися — вони всередині.' }
+      ],
+      items: [
+        { id: 'keyboard', name: 'Клавіатура',             emoji: '⌨️', category: 'input' },
+        { id: 'mouse',    name: 'Мишка',                  emoji: '🖱️', category: 'input' },
+        { id: 'mic',      name: 'Мікрофон',               emoji: '🎤', category: 'input' },
+        { id: 'camera',   name: 'Вебкамера',              emoji: '📷', category: 'input' },
+        { id: 'monitor',  name: 'Монітор',                emoji: '🖥️', category: 'output' },
+        { id: 'printer',  name: 'Принтер',                emoji: '🖨️', category: 'output' },
+        { id: 'speakers', name: 'Колонки',                emoji: '🔊', category: 'output' },
+        { id: 'headset',  name: 'Навушники',              emoji: '🎧', category: 'output' },
+        { id: 'browser',  name: 'Браузер',                emoji: '🌐', category: 'software' },
+        { id: 'game',     name: 'Комп’ютерна гра',        emoji: '👾', category: 'software' },
+        { id: 'paint',    name: 'Програма для малювання', emoji: '🎨', category: 'software' },
+        { id: 'writer',   name: 'Текстовий редактор',     emoji: '📝', category: 'software' }
+      ]
+    },
+    {
+      id: 'hard', icon: '🌳', label: 'Складніше', grade: '5 клас',
+      skill: 'розрізняє пристрої введення, виведення, зберігання і програми',
+      categories: [
+        { id: 'input',    name: 'Пристрої введення',   emoji: '📥', theme: 'peach',  hint: 'Передають інформацію В комп’ютер.' },
+        { id: 'output',   name: 'Пристрої виведення',  emoji: '📤', theme: 'teal',   hint: 'Показують або озвучують інформацію З комп’ютера.' },
+        { id: 'storage',  name: 'Пристрої зберігання', emoji: '🗄️', theme: 'butter', hint: 'Зберігають файли, навіть коли комп’ютер вимкнено.' },
+        { id: 'software', name: 'Програми',            emoji: '💿', theme: 'rose',   hint: 'Їх не можна торкнутися — вони всередині.' }
+      ],
+      items: [
+        { id: 'keyboard',  name: 'Клавіатура',         emoji: '⌨️', category: 'input' },
+        { id: 'mouse',     name: 'Мишка',              emoji: '🖱️', category: 'input' },
+        { id: 'mic',       name: 'Мікрофон',           emoji: '🎤', category: 'input' },
+        { id: 'camera',    name: 'Вебкамера',          emoji: '📷', category: 'input' },
+        { id: 'monitor',   name: 'Монітор',            emoji: '🖥️', category: 'output' },
+        { id: 'printer',   name: 'Принтер',            emoji: '🖨️', category: 'output' },
+        { id: 'speakers',  name: 'Колонки',            emoji: '🔊', category: 'output' },
+        { id: 'flash',     name: 'Флешка',             emoji: '💾', category: 'storage' },
+        { id: 'hdd',       name: 'Жорсткий диск',      emoji: '💽', category: 'storage' },
+        { id: 'dvd',       name: 'Оптичний диск',      emoji: '📀', category: 'storage' },
+        { id: 'browser',   name: 'Браузер',            emoji: '🌐', category: 'software' },
+        { id: 'game',      name: 'Комп’ютерна гра',    emoji: '👾', category: 'software' },
+        { id: 'antivirus', name: 'Антивірус',          emoji: '🛡️', category: 'software' },
+        { id: 'writer',    name: 'Текстовий редактор', emoji: '📝', category: 'software' }
+      ]
+    }
+  ];
+
+  /* =========================================================
+     ДАНІ: Завдання 2 — Алгоритми (кілька тем)
+     Порядок у steps — правильний; start — початкове перемішування.
+     ========================================================= */
+  const ALGO_TOPICS = [
+    {
+      id: 'paint', icon: '🎨', short: 'Малюнок', title: 'Як намалювати малюнок на комп’ютері',
+      steps: [
+        { id: 'a1', text: 'Увімкнути комп’ютер',            emoji: '⚡' },
+        { id: 'a2', text: 'Відкрити програму для малювання', emoji: '🎨' },
+        { id: 'a3', text: 'Намалювати малюнок',              emoji: '✏️' },
+        { id: 'a4', text: 'Зберегти файл',                   emoji: '💾' },
+        { id: 'a5', text: 'Вимкнути комп’ютер',              emoji: '🔌' }
+      ],
+      start: ['a3', 'a5', 'a1', 'a4', 'a2']
+    },
+    {
+      id: 'teeth', icon: '🪥', short: 'Зуби', title: 'Як почистити зуби',
+      steps: [
+        { id: 't1', text: 'Взяти зубну щітку',                 emoji: '🪥' },
+        { id: 't2', text: 'Видавити трохи пасти',              emoji: '🧴' },
+        { id: 't3', text: 'Почистити зуби',                    emoji: '😁' },
+        { id: 't4', text: 'Прополоскати рот водою',            emoji: '💧' },
+        { id: 't5', text: 'Помити щітку і поставити на місце', emoji: '🧼' }
+      ],
+      start: ['t3', 't1', 't5', 't2', 't4']
+    },
+    {
+      id: 'plant', icon: '🌱', short: 'Квітка', title: 'Як посадити квітку',
+      steps: [
+        { id: 'p1', text: 'Взяти горщик',          emoji: '🏺' },
+        { id: 'p2', text: 'Насипати землю',        emoji: '🟫' },
+        { id: 'p3', text: 'Посадити насінинку',    emoji: '🌰' },
+        { id: 'p4', text: 'Полити водою',          emoji: '💧' },
+        { id: 'p5', text: 'Поставити на сонечко',  emoji: '☀️' }
+      ],
+      start: ['p4', 'p2', 'p5', 'p1', 'p3']
+    }
+  ];
+
+  /* =========================================================
+     ДАНІ: Завдання 3–5 — Вікторини (однаковий рушій)
+     Щоб додати задачку — допишіть об'єкт у rounds.
+     ========================================================= */
+  const TRUE_FALSE = [
+    { id: 'yes', emoji: '👍', label: 'Правда' },
+    { id: 'no',  emoji: '👎', label: 'Неправда' }
+  ];
+
+  const QUIZZES = {
+    odd: {
+      theme: 'sky', nextBtn: '#odd-next', skill: 'знаходить зайве',
+      hint: 'Подумай, що об’єднує інші картинки.',
+      rounds: [
+        { prompt: 'Що тут зайве?', correct: 'apple', explain: 'Яблуко — не частина комп’ютера. А монітор, клавіатура і мишка — так!',
+          options: [ { id: 'monitor', emoji: '🖥️', label: 'Монітор' }, { id: 'keyboard', emoji: '⌨️', label: 'Клавіатура' },
+                     { id: 'apple', emoji: '🍎', label: 'Яблуко' }, { id: 'mouse', emoji: '🖱️', label: 'Мишка' } ] },
+        { prompt: 'Що тут зайве?', correct: 'car', explain: 'Машина — не тварина. Кіт, пес і кролик — тварини.',
+          options: [ { id: 'cat', emoji: '🐱', label: 'Кіт' }, { id: 'car', emoji: '🚗', label: 'Машина' },
+                     { id: 'dog', emoji: '🐶', label: 'Пес' }, { id: 'rabbit', emoji: '🐰', label: 'Кролик' } ] },
+        { prompt: 'Що тут зайве?', correct: 'printer', explain: 'Принтер — це пристрій, його можна торкнутися. Інші — програми.',
+          options: [ { id: 'paint', emoji: '🎨', label: 'Малювалка' }, { id: 'writer', emoji: '📝', label: 'Текстовий редактор' },
+                     { id: 'browser', emoji: '🌐', label: 'Браузер' }, { id: 'printer', emoji: '🖨️', label: 'Принтер' } ] },
+        { prompt: 'Яке число зайве?', correct: 'n8', explain: 'Числа 1, 3 і 5 — непарні, а 8 — парне.',
+          options: [ { id: 'n1', emoji: '1', label: 'Один' }, { id: 'n3', emoji: '3', label: 'Три' },
+                     { id: 'n8', emoji: '8', label: 'Вісім' }, { id: 'n5', emoji: '5', label: 'П’ять' } ] },
+        { prompt: 'Що тут зайве?', correct: 'monitor', explain: 'Навушники, колонки й мікрофон працюють зі звуком, а монітор — із зображенням.',
+          options: [ { id: 'headset', emoji: '🎧', label: 'Навушники' }, { id: 'speakers', emoji: '🔊', label: 'Колонки' },
+                     { id: 'monitor', emoji: '🖥️', label: 'Монітор' }, { id: 'mic', emoji: '🎤', label: 'Мікрофон' } ] },
+        { prompt: 'Що тут зайве?', correct: 'carrot', explain: 'Морква — овоч, а яблуко, банан і груша — фрукти.',
+          options: [ { id: 'carrot', emoji: '🥕', label: 'Морква' }, { id: 'apple', emoji: '🍎', label: 'Яблуко' },
+                     { id: 'banana', emoji: '🍌', label: 'Банан' }, { id: 'pear', emoji: '🍐', label: 'Груша' } ] }
+      ]
+    },
+    pattern: {
+      theme: 'butter', nextBtn: '#pattern-next', skill: 'продовжує закономірності',
+      hint: 'Подивись, що повторюється або як змінюється ряд.',
+      rounds: [
+        { prompt: 'Що буде далі?', sequence: ['🔴', '🔵', '🔴', '🔵', '🔴'], sequenceLabel: 'Ряд: червоне, синє, червоне, синє, червоне, знак питання',
+          correct: 'blue', explain: 'Кольори чергуються: червоне — синє — червоне — синє.',
+          options: [ { id: 'red', emoji: '🔴', label: 'Червоне' }, { id: 'blue', emoji: '🔵', label: 'Синє' }, { id: 'green', emoji: '🟢', label: 'Зелене' } ] },
+        { prompt: 'Що буде далі?', sequence: ['⭐', '⭐', '🌙', '⭐', '⭐'], sequenceLabel: 'Ряд: зірка, зірка, місяць, зірка, зірка, знак питання',
+          correct: 'moon', explain: 'Дві зірки, потім місяць — і знову по колу.',
+          options: [ { id: 'star', emoji: '⭐', label: 'Зірка' }, { id: 'sun', emoji: '☀️', label: 'Сонце' }, { id: 'moon', emoji: '🌙', label: 'Місяць' } ] },
+        { prompt: 'Що буде далі?', sequence: ['🍎', '🍐', '🍌', '🍎', '🍐'], sequenceLabel: 'Ряд: яблуко, груша, банан, яблуко, груша, знак питання',
+          correct: 'banana', explain: 'Повторюються три фрукти: яблуко, груша, банан.',
+          options: [ { id: 'banana', emoji: '🍌', label: 'Банан' }, { id: 'apple', emoji: '🍎', label: 'Яблуко' }, { id: 'pear', emoji: '🍐', label: 'Груша' } ] },
+        { prompt: 'Яке число буде далі?', sequence: ['1', '3', '5', '7'], sequenceLabel: 'Ряд: 1, 3, 5, 7, знак питання',
+          correct: 'n9', explain: 'Кожне наступне число більше на 2: 7 + 2 = 9.',
+          options: [ { id: 'n8', emoji: '8', label: 'Вісім' }, { id: 'n9', emoji: '9', label: 'Дев’ять' }, { id: 'n10', emoji: '10', label: 'Десять' } ] },
+        { prompt: 'Що буде далі?', sequence: ['🔺', '🔺', '🟦', '🔺', '🔺', '🟦', '🔺'], sequenceLabel: 'Ряд: трикутник, трикутник, квадрат, трикутник, трикутник, квадрат, трикутник, знак питання',
+          correct: 'tri', explain: 'Два трикутники, потім квадрат. Після одного трикутника буде ще один.',
+          options: [ { id: 'sq', emoji: '🟦', label: 'Квадрат' }, { id: 'tri', emoji: '🔺', label: 'Трикутник' }, { id: 'circle', emoji: '🟢', label: 'Коло' } ] },
+        { prompt: 'Яке число буде далі?', sequence: ['10', '20', '30', '40'], sequenceLabel: 'Ряд: 10, 20, 30, 40, знак питання',
+          correct: 'n50', explain: 'Кожне наступне число більше на 10: 40 + 10 = 50.',
+          options: [ { id: 'n45', emoji: '45', label: 'Сорок п’ять' }, { id: 'n50', emoji: '50', label: 'П’ятдесят' }, { id: 'n60', emoji: '60', label: 'Шістдесят' } ] }
+      ]
+    },
+    truth: {
+      theme: 'rose', nextBtn: '#truth-next', skill: 'відрізняє правду від неправди',
+      hint: 'Прочитай речення ще раз уважно 🙂',
+      rounds: [
+        { picture: '🖱️', prompt: 'Мишкою можна керувати курсором на екрані.', correct: 'yes',
+          explain: 'Так! Коли рухаєш мишку — рухається курсор.', options: TRUE_FALSE },
+        { picture: '🖨️', prompt: 'Принтер — це програма.', correct: 'no',
+          explain: 'Принтер — це пристрій. Його можна торкнутися рукою.', options: TRUE_FALSE },
+        { picture: '💾', prompt: 'Свою роботу на комп’ютері варто зберігати, щоб вона не загубилась.', correct: 'yes',
+          explain: 'Так! Збережений файл можна відкрити знову.', options: TRUE_FALSE },
+        { picture: '🔑', prompt: 'Свій пароль можна розповідати всім друзям.', correct: 'no',
+          explain: 'Пароль — це секрет. Його знаєш тільки ти і твої батьки.', options: TRUE_FALSE },
+        { picture: '🤖', prompt: 'Комп’ютер виконує команди, які йому дали люди.', correct: 'yes',
+          explain: 'Так! Комп’ютер працює за програмами, які написали люди.', options: TRUE_FALSE },
+        { picture: '🪜', prompt: 'В алгоритмі кроки можна робити в будь-якому порядку.', correct: 'no',
+          explain: 'Порядок кроків дуже важливий! Спочатку видавлюємо пасту, а потім чистимо зуби.', options: TRUE_FALSE }
+      ]
+    }
+  };
+
+  /* =========================================================
+     ДАНІ: Завдання 7 — Машини та марки
+     wiki  — назва статті англійської Вікіпедії: з неї автоматично
+             береться головне фото (Wikimedia Commons, вільна ліцензія).
+     photo — (необов'язково) власне фото: шлях до файлу поруч з index.html
+             або URL. Якщо задано — Вікіпедія не використовується.
+     ========================================================= */
+  const CARS = [
+    { id: 'toyota',   brand: 'Toyota',        model: 'Corolla',         wiki: 'Toyota_Corolla',        country: 'Японія',    fact: 'Corolla — одна з найпопулярніших машин у світі.' },
+    { id: 'vw',       brand: 'Volkswagen',    model: 'Beetle («Жук»)',  wiki: 'Volkswagen_Beetle',     country: 'Німеччина', fact: 'Цю машину прозвали «Жуком» через круглу форму.' },
+    { id: 'tesla',    brand: 'Tesla',         model: 'Model 3',         wiki: 'Tesla_Model_3',         country: 'США',       fact: 'Це електромобіль: він їздить на батареї, а не на бензині.' },
+    { id: 'ford',     brand: 'Ford',          model: 'Mustang',         wiki: 'Ford_Mustang',          country: 'США',       fact: 'На емблемі Mustang — кінь, що мчить галопом.' },
+    { id: 'fiat',     brand: 'Fiat',          model: '500',             wiki: 'Fiat_500_(2007)',       country: 'Італія',    fact: 'Маленька міська машинка — її легко паркувати.' },
+    { id: 'skoda',    brand: 'Škoda',         model: 'Octavia',         wiki: 'Škoda_Octavia',         country: 'Чехія',     fact: 'Škoda — одна з найстаріших автомобільних марок.' },
+    { id: 'mercedes', brand: 'Mercedes-Benz', model: 'G-Class',         wiki: 'Mercedes-Benz_G-Class', country: 'Німеччина', fact: 'Цей позашляховик схожий на коробку і їздить бездоріжжям.' },
+    { id: 'bmw',      brand: 'BMW',           model: '3 Series',        wiki: 'BMW_3_Series',          country: 'Німеччина', fact: 'BMW означає «Баварські моторні заводи».' }
+  ];
+  const carById = id => CARS.find(c => c.id === id);
+
+  // Вікторина «Яка це марка?» будується з CARS автоматично
+  QUIZZES.cars = {
+    theme: 'lime', nextBtn: '#cars-next', skill: 'знає марки автомобілів',
+    hint: 'Повернись до «Знайомства» і подивись на фото ще раз 🙂',
+    rounds: CARS.map((car, i) => {
+      const others = [CARS[(i + 3) % CARS.length], CARS[(i + 5) % CARS.length]];
+      const opts = [car, ...others].map(c => ({ id: c.id, emoji: '', label: c.brand }));
+      // детерміноване перемішування варіантів
+      const shift = i % 3;
+      const options = [...opts.slice(shift), ...opts.slice(0, shift)];
+      return {
+        prompt: 'Яка марка цієї машини?', carId: car.id, correct: car.id, options,
+        explain: `Це ${car.brand} ${car.model} (${car.country}). ${car.fact}`
+      };
+    })
+  };
+
+  /* =========================================================
+     ДАНІ: Завдання 6 — Робот (поле 5×5, координати [рядок, стовпчик])
+     ========================================================= */
+  const ROBOT_LEVELS = [
+    { size: 5, start: [2, 0], star: [2, 3], rocks: [] },
+    { size: 5, start: [4, 0], star: [1, 2], rocks: [[2, 1], [4, 2]] },
+    { size: 5, start: [1, 0], star: [1, 4], rocks: [[0, 2], [1, 2], [2, 2]] }
+  ];
+  const DIRS = {
+    up:    { d: [-1, 0], e: '⬆️', name: 'вгору' },
+    down:  { d: [1, 0],  e: '⬇️', name: 'вниз' },
+    left:  { d: [0, -1], e: '⬅️', name: 'ліворуч' },
+    right: { d: [0, 1],  e: '➡️', name: 'праворуч' }
+  };
+  const ROBOT_MAX_STEPS = 20;
+
+  /* =========================================================
+     Глобальний стан
+     ========================================================= */
+  const state = {
+    soundEnabled: false,
+    currentStep: 1,
+    completed: new Set(),           // які завдання виконано
+    // Сортування
+    selectedItemForSorting: null,
+    sortingLevel: 'easy',
+    placements: {},
+    reviewIds: new Set(),
+    // Алгоритм
+    algoTopic: 'paint',
+    algoSolved: new Set(),
+    currentSequence: [],
+    seqChecked: false
+  };
+  const quizState = {};             // { [key]: { round, solved, wrong:Set, done } }
+  const robot = { level: 0, program: [], pos: [0, 0], trail: new Set(), running: false, activeIdx: -1, msg: null, showNextLevel: false, done: false };
+
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* =========================================================
+     Аудіо (Web Audio API) — м'які синтезовані дзвіночки
+     ========================================================= */
+  let audioCtx = null;
+  function playChime(freqs, { gap = 0.11, dur = 0.5, vol = 0.07 } = {}) {
+    if (!state.soundEnabled) return;
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const now = audioCtx.currentTime;
+      freqs.forEach((f, i) => {
+        const t = now + i * gap;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = f;
+        gain.gain.setValueAtTime(0.0001, t);
+        gain.gain.linearRampToValueAtTime(vol, t + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        osc.connect(gain).connect(audioCtx.destination);
+        osc.start(t);
+        osc.stop(t + dur + 0.05);
+      });
+    } catch (_) { /* без Web Audio — просто мовчимо */ }
+  }
+  const sounds = {
+    select:  () => playChime([659.25], { dur: 0.25, vol: 0.05 }),
+    place:   () => playChime([523.25, 659.25], { dur: 0.35 }),
+    move:    () => playChime([587.33], { dur: 0.2, vol: 0.04 }),
+    hint:    () => playChime([440, 392], { dur: 0.45, vol: 0.05 }),
+    right:   () => playChime([659.25, 783.99], { dur: 0.4 }),
+    success: () => playChime([523.25, 659.25, 783.99, 1046.5], { gap: 0.13, dur: 0.7 }),
+    toggle:  () => playChime([783.99], { dur: 0.25, vol: 0.05 })
+  };
+
+  function renderSoundToggle() {
+    $('#sound-toggle').setAttribute('aria-pressed', String(state.soundEnabled));
+    $('#sound-icon').textContent = state.soundEnabled ? '🔈' : '🔇';
+    $('#sound-label').textContent = state.soundEnabled ? 'Звук увімкнено' : 'Звук вимкнено';
+  }
+  $('#sound-toggle').addEventListener('click', () => {
+    state.soundEnabled = !state.soundEnabled;
+    renderSoundToggle();
+    sounds.toggle();
+  });
+
+  /* =========================================================
+     Сповіщення: м'які зелені / жовті / лавандові панелі
+     ========================================================= */
+  const TONES = {
+    ok:   { cls: 'bg-mint-soft border-mint-mid text-mint-deep',             icon: '🌟' },
+    hint: { cls: 'bg-butter-soft border-butter-mid text-butter-deep',       icon: '💡' },
+    info: { cls: 'bg-lavender-soft border-lavender-mid text-lavender-deep', icon: '👉' }
+  };
+  function feedbackBox(msg) {
+    if (!msg) return '';
+    const t = TONES[msg.tone];
+    return `<div class="flex gap-3 items-start border-2 rounded-3xl px-5 py-4 text-lg font-bold ${t.cls}">
+        <span class="text-2xl" aria-hidden="true">${t.icon}</span><span>${msg.text}</span></div>`;
+  }
+  const setFeedback = (sel, msg) => { $(sel).innerHTML = feedbackBox(msg); };
+
+  function markDone(key) { state.completed.add(key); renderStepper(); renderCertSlots(); }
+
+  /* =========================================================
+     ДАНІ: Додаткові категорії-вікторини.
+     Щоб додати нову категорію — допишіть об'єкт у цей масив:
+     розділ, кнопка в меню вибору і нагорода з'являться самі.
+     ========================================================= */
+  const SAFE_UNSAFE = [
+    { id: 'safe',   emoji: '👍', label: 'Безпечно' },
+    { id: 'unsafe', emoji: '✋', label: 'Небезпечно' }
+  ];
+
+  const EXTRA_TASKS = [
+    {
+      key: 'safety', icon: '🛡️', title: 'Безпека в інтернеті', label: 'Безпека', theme: 'sky',
+      desc: 'Безпечно чи ні?', intro: 'Прочитай, що робить дитина. Це безпечно чи ні?',
+      skill: 'знає правила безпеки в інтернеті', hint: 'Подумай: чи сказав би ти це незнайомій людині на вулиці?',
+      rounds: [
+        { picture: '🏠', prompt: 'Незнайомець у грі питає твою адресу. Сказати йому?', correct: 'unsafe', options: SAFE_UNSAFE,
+          explain: 'Адресу, телефон і школу незнайомцям не кажемо ніколи.' },
+        { picture: '👨‍👩‍👧', prompt: 'В інтернеті щось налякало — розповісти про це батькам.', correct: 'safe', options: SAFE_UNSAFE,
+          explain: 'Так! Дорослі завжди допоможуть.' },
+        { picture: '🎁', prompt: 'Натиснути на яскраву рекламу «Ти виграв телефон!».', correct: 'unsafe', options: SAFE_UNSAFE,
+          explain: 'Така реклама часто обманює. Краще її закрити.' },
+        { picture: '🔑', prompt: 'Мати пароль, який знаєш тільки ти і батьки.', correct: 'safe', options: SAFE_UNSAFE,
+          explain: 'Так! Пароль — це секрет.' },
+        { picture: '📸', prompt: 'Надіслати своє фото незнайомому другові з гри.', correct: 'unsafe', options: SAFE_UNSAFE,
+          explain: 'Свої фото надсилаємо тільки тим, кого знаємо в житті, і з дозволу батьків.' },
+        { picture: '📥', prompt: 'Спитати дорослого, перш ніж завантажити нову гру.', correct: 'safe', options: SAFE_UNSAFE,
+          explain: 'Так! Дорослий допоможе перевірити, чи гра безпечна.' }
+      ]
+    },
+    {
+      key: 'keyboard', icon: '⌨️', title: 'Чарівна клавіатура', label: 'Клавіатура', theme: 'lavender',
+      desc: 'Яка клавіша потрібна?', intro: 'Яку клавішу натиснути? Обери правильну.',
+      skill: 'знає основні клавіші клавіатури', hint: 'Пригадай, що робить кожна клавіша.',
+      rounds: [
+        { picture: '✍️', prompt: 'Щоб зробити пробіл між словами, натисни…', correct: 'space',
+          options: [ { id: 'space', emoji: '␣', label: 'Пробіл' }, { id: 'enter', emoji: '⏎', label: 'Enter' }, { id: 'shift', emoji: '⇧', label: 'Shift' } ],
+          explain: 'Пробіл — найдовша клавіша внизу клавіатури.' },
+        { picture: '🧽', prompt: 'Щоб стерти останню літеру, натисни…', correct: 'back',
+          options: [ { id: 'enter', emoji: '⏎', label: 'Enter' }, { id: 'back', emoji: '⌫', label: 'Backspace' }, { id: 'space', emoji: '␣', label: 'Пробіл' } ],
+          explain: 'Backspace стирає літеру зліва від курсора.' },
+        { picture: '📄', prompt: 'Щоб почати новий рядок, натисни…', correct: 'enter',
+          options: [ { id: 'shift', emoji: '⇧', label: 'Shift' }, { id: 'back', emoji: '⌫', label: 'Backspace' }, { id: 'enter', emoji: '⏎', label: 'Enter' } ],
+          explain: 'Enter переносить курсор на новий рядок.' },
+        { picture: '🅰️', prompt: 'Щоб написати одну велику літеру, тримай…', correct: 'shift',
+          options: [ { id: 'shift', emoji: '⇧', label: 'Shift' }, { id: 'space', emoji: '␣', label: 'Пробіл' }, { id: 'enter', emoji: '⏎', label: 'Enter' } ],
+          explain: 'Тримай Shift і натисни літеру — вона стане великою.' },
+        { picture: '🔠', prompt: 'Щоб усі літери стали великими, увімкни…', correct: 'caps',
+          options: [ { id: 'back', emoji: '⌫', label: 'Backspace' }, { id: 'caps', emoji: '⇪', label: 'Caps Lock' }, { id: 'space', emoji: '␣', label: 'Пробіл' } ],
+          explain: 'Caps Lock вмикає великі літери, поки його не вимкнеш.' },
+        { picture: '👉', prompt: 'Щоб посунути курсор праворуч, натисни…', correct: 'right',
+          options: [ { id: 'left', emoji: '⬅️', label: 'Стрілка ліворуч' }, { id: 'right', emoji: '➡️', label: 'Стрілка праворуч' }, { id: 'up', emoji: '⬆️', label: 'Стрілка вгору' } ],
+          explain: 'Стрілки рухають курсор у різні боки.' }
+      ]
+    },
+    {
+      key: 'math', icon: '🔢', title: 'Математична логіка', label: 'Математика', theme: 'butter',
+      desc: 'Порахуй і подумай.', intro: 'Подумай і обери правильну відповідь. Можна рахувати на пальчиках!',
+      skill: 'розв’язує логічні задачі з числами', hint: 'Порахуй ще раз повільно 🙂',
+      rounds: [
+        { picture: '🐱🐱', prompt: 'Скільки лапок у двох котиків?', correct: 'n8',
+          options: [ { id: 'n6', emoji: '6', label: 'Шість' }, { id: 'n8', emoji: '8', label: 'Вісім' }, { id: 'n10', emoji: '10', label: 'Десять' } ],
+          explain: 'У кожного котика 4 лапки: 4 + 4 = 8.' },
+        { picture: '⚖️', prompt: 'Яке число більше?', correct: 'n74',
+          options: [ { id: 'n47', emoji: '47', label: 'Сорок сім' }, { id: 'n74', emoji: '74', label: 'Сімдесят чотири' } ],
+          explain: 'У числі 74 сім десятків, а в 47 — лише чотири.' },
+        { picture: '🖐️🖐️🖐️', prompt: 'Скільки буде 5 + 5 + 5?', correct: 'n15',
+          options: [ { id: 'n10', emoji: '10', label: 'Десять' }, { id: 'n15', emoji: '15', label: 'П’ятнадцять' }, { id: 'n20', emoji: '20', label: 'Двадцять' } ],
+          explain: 'Три рази по 5 — це 15.' },
+        { picture: '🍎🍎🍎', prompt: 'У Олі 3 яблука. Одне вона з’їла. Скільки лишилось?', correct: 'n2',
+          options: [ { id: 'n1', emoji: '1', label: 'Одне' }, { id: 'n2', emoji: '2', label: 'Два' }, { id: 'n4', emoji: '4', label: 'Чотири' } ],
+          explain: '3 − 1 = 2.' },
+        { picture: '🔺', prompt: 'Скільки кутів у трикутника?', correct: 'n3',
+          options: [ { id: 'n3', emoji: '3', label: 'Три' }, { id: 'n4', emoji: '4', label: 'Чотири' }, { id: 'n5', emoji: '5', label: 'П’ять' } ],
+          explain: 'Три-кутник — у самій назві є відповідь: три кути.' },
+        { picture: '🔟', prompt: 'Яке число стоїть між 9 і 11?', correct: 'n10',
+          options: [ { id: 'n8', emoji: '8', label: 'Вісім' }, { id: 'n10', emoji: '10', label: 'Десять' }, { id: 'n12', emoji: '12', label: 'Дванадцять' } ],
+          explain: '9, 10, 11 — число 10 посередині.' }
+      ]
+    },
+    {
+      key: 'animals', icon: '🐾', title: 'Світ тварин', label: 'Тварини', theme: 'mint',
+      desc: 'Хто де живе і що вміє?', intro: 'Що ти знаєш про тварин? Обери правильну відповідь.',
+      skill: 'знає цікаве про тварин', hint: 'Уяви цю тварину і подумай ще раз.',
+      rounds: [
+        { picture: '🐟', prompt: 'Де живе рибка?', correct: 'water',
+          options: [ { id: 'forest', emoji: '🌳', label: 'У лісі' }, { id: 'water', emoji: '🌊', label: 'У воді' }, { id: 'desert', emoji: '🏜️', label: 'У пустелі' } ],
+          explain: 'Риби дихають зябрами і живуть у воді.' },
+        { picture: '🥛', prompt: 'Хто дає нам молоко?', correct: 'cow',
+          options: [ { id: 'hen', emoji: '🐔', label: 'Курка' }, { id: 'cow', emoji: '🐄', label: 'Корова' }, { id: 'fish', emoji: '🐟', label: 'Риба' } ],
+          explain: 'Корова дає молоко, а курка — яйця.' },
+        { picture: '☁️', prompt: 'Хто вміє літати?', correct: 'eagle',
+          options: [ { id: 'turtle', emoji: '🐢', label: 'Черепаха' }, { id: 'elephant', emoji: '🐘', label: 'Слон' }, { id: 'eagle', emoji: '🦅', label: 'Орел' } ],
+          explain: 'Орел — птах, у нього є крила.' },
+        { picture: '📏', prompt: 'У кого найдовша шия?', correct: 'giraffe',
+          options: [ { id: 'giraffe', emoji: '🦒', label: 'Жирафа' }, { id: 'horse', emoji: '🐎', label: 'Кінь' }, { id: 'dog', emoji: '🐕', label: 'Пес' } ],
+          explain: 'Жирафа дістає листя з високих дерев завдяки довгій шиї.' },
+        { picture: '🐻‍❄️', prompt: 'Де живе білий ведмідь?', correct: 'arctic',
+          options: [ { id: 'island', emoji: '🏝️', label: 'На тропічному острові' }, { id: 'arctic', emoji: '🧊', label: 'В Арктиці' }, { id: 'desert', emoji: '🏜️', label: 'У пустелі' } ],
+          explain: 'Білий ведмідь живе серед льоду і снігу.' },
+        { picture: '🐛', prompt: 'Хто з них — комаха?', correct: 'bee',
+          options: [ { id: 'bird', emoji: '🐦', label: 'Пташка' }, { id: 'frog', emoji: '🐸', label: 'Жабка' }, { id: 'bee', emoji: '🐝', label: 'Бджілка' } ],
+          explain: 'У комах шість ніжок. Бджілка — комаха.' }
+      ]
+    },
+    {
+      key: 'time', icon: '🗓️', title: 'Пори року і час', label: 'Час', theme: 'peach',
+      desc: 'Дні, місяці, пори року.', intro: 'Що ти знаєш про час і пори року?',
+      skill: 'орієнтується в днях тижня і порах року', hint: 'Пригадай, як іде час по порядку.',
+      rounds: [
+        { picture: '❄️', prompt: 'Яка пора року настає після зими?', correct: 'spring',
+          options: [ { id: 'summer', emoji: '☀️', label: 'Літо' }, { id: 'spring', emoji: '🌸', label: 'Весна' }, { id: 'autumn', emoji: '🍂', label: 'Осінь' } ],
+          explain: 'Зима → весна → літо → осінь.' },
+        { picture: '🍁', prompt: 'Коли з дерев опадає листя?', correct: 'autumn',
+          options: [ { id: 'autumn', emoji: '🍂', label: 'Восени' }, { id: 'spring', emoji: '🌸', label: 'Навесні' }, { id: 'summer', emoji: '☀️', label: 'Влітку' } ],
+          explain: 'Восени листя жовтіє і опадає.' },
+        { picture: '📅', prompt: 'Скільки днів у тижні?', correct: 'n7',
+          options: [ { id: 'n5', emoji: '5', label: 'П’ять' }, { id: 'n7', emoji: '7', label: 'Сім' }, { id: 'n10', emoji: '10', label: 'Десять' } ],
+          explain: 'Понеділок, вівторок, середа, четвер, п’ятниця, субота, неділя — сім днів.' },
+        { picture: '🗓️', prompt: 'Який день настає після понеділка?', correct: 'tue',
+          options: [ { id: 'sun', emoji: '7️⃣', label: 'Неділя' }, { id: 'tue', emoji: '2️⃣', label: 'Вівторок' }, { id: 'wed', emoji: '3️⃣', label: 'Середа' } ],
+          explain: 'Понеділок — перший день, вівторок — другий.' },
+        { picture: '✨', prompt: 'Коли на небі видно зірки?', correct: 'night',
+          options: [ { id: 'morning', emoji: '🌅', label: 'Вранці' }, { id: 'day', emoji: '☀️', label: 'Вдень' }, { id: 'night', emoji: '🌙', label: 'Вночі' } ],
+          explain: 'Удень зірки є, але сонце світить яскравіше, тому їх видно вночі.' },
+        { picture: '🎂', prompt: 'Скільки місяців у році?', correct: 'n12',
+          options: [ { id: 'n7', emoji: '7', label: 'Сім' }, { id: 'n10', emoji: '10', label: 'Десять' }, { id: 'n12', emoji: '12', label: 'Дванадцять' } ],
+          explain: 'Від січня до грудня — 12 місяців.' }
+      ]
+    },
+    {
+      key: 'ukraine', icon: '💙', title: 'Моя Україна', label: 'Україна', theme: 'sky',
+      desc: 'Символи, міста, річки.', intro: 'Що ти знаєш про нашу країну?',
+      skill: 'знає символи і цікавинки України', hint: 'Подумай ще раз — ти точно це знаєш!',
+      rounds: [
+        { picture: '🏙️', prompt: 'Яке місто — столиця України?', correct: 'kyiv',
+          options: [ { id: 'lviv', emoji: '🏛️', label: 'Львів' }, { id: 'kyiv', emoji: '⭐', label: 'Київ' }, { id: 'odesa', emoji: '⚓', label: 'Одеса' } ],
+          explain: 'Київ — столиця України.' },
+        { picture: '🚩', prompt: 'Які кольори має прапор України?', correct: 'by',
+          options: [ { id: 'by', emoji: '💙💛', label: 'Синій і жовтий' }, { id: 'rw', emoji: '❤️🤍', label: 'Червоний і білий' }, { id: 'gw', emoji: '💚🤍', label: 'Зелений і білий' } ],
+          explain: 'Синій — як небо, жовтий — як пшеничне поле.' },
+        { picture: '🛡️', prompt: 'Що зображено на гербі України?', correct: 'trident',
+          options: [ { id: 'lion', emoji: '🦁', label: 'Лев' }, { id: 'trident', emoji: '🔱', label: 'Тризуб' }, { id: 'eagle', emoji: '🦅', label: 'Орел' } ],
+          explain: 'Герб України — золотий тризуб на синьому щиті.' },
+        { picture: '🌊', prompt: 'Яка найбільша річка України?', correct: 'dnipro',
+          options: [ { id: 'dnipro', emoji: '🏞️', label: 'Дніпро' }, { id: 'desna', emoji: '💧', label: 'Десна' }, { id: 'rosa', emoji: '🌿', label: 'Рось' } ],
+          explain: 'Дніпро перетинає всю Україну з півночі на південь.' },
+        { picture: '🏖️', prompt: 'Яке з цих морів омиває Україну?', correct: 'black',
+          options: [ { id: 'red', emoji: '🔴', label: 'Червоне' }, { id: 'north', emoji: '🧊', label: 'Північне' }, { id: 'black', emoji: '⚫', label: 'Чорне' } ],
+          explain: 'Україну омивають Чорне та Азовське моря.' },
+        { picture: '🗣️', prompt: 'Яка мова — державна в Україні?', correct: 'uk',
+          options: [ { id: 'uk', emoji: '💙💛', label: 'Українська' }, { id: 'en', emoji: '🔤', label: 'Англійська' }, { id: 'pl', emoji: '📖', label: 'Польська' } ],
+          explain: 'Українська — державна мова України.' }
+      ]
+    },
+    {
+      key: 'colors', icon: '🎨', title: 'Кольори та фігури', label: 'Кольори', theme: 'rose',
+      desc: 'Змішуй кольори, впізнавай фігури.', intro: 'Що вийде, якщо змішати фарби? Які бувають фігури?',
+      skill: 'змішує кольори і впізнає фігури', hint: 'Уяви, що малюєш фарбами, і подумай ще раз.',
+      rounds: [
+        { picture: '🔵➕🟡', prompt: 'Синій + жовтий = ?', correct: 'green',
+          options: [ { id: 'green', emoji: '🟢', label: 'Зелений' }, { id: 'purple', emoji: '🟣', label: 'Фіолетовий' }, { id: 'orange', emoji: '🟠', label: 'Помаранчевий' } ],
+          explain: 'Синя і жовта фарби разом дають зелену — як трава!' },
+        { picture: '🔴➕🟡', prompt: 'Червоний + жовтий = ?', correct: 'orange',
+          options: [ { id: 'brown', emoji: '🟤', label: 'Коричневий' }, { id: 'orange', emoji: '🟠', label: 'Помаранчевий' }, { id: 'green', emoji: '🟢', label: 'Зелений' } ],
+          explain: 'Червоний і жовтий дають помаранчевий — як апельсин.' },
+        { picture: '🔴➕🔵', prompt: 'Червоний + синій = ?', correct: 'purple',
+          options: [ { id: 'purple', emoji: '🟣', label: 'Фіолетовий' }, { id: 'yellow', emoji: '🟡', label: 'Жовтий' }, { id: 'green', emoji: '🟢', label: 'Зелений' } ],
+          explain: 'Червоний і синій разом — фіолетовий.' },
+        { picture: '🟥', prompt: 'Скільки сторін у квадрата?', correct: 'n4',
+          options: [ { id: 'n3', emoji: '3', label: 'Три' }, { id: 'n4', emoji: '4', label: 'Чотири' }, { id: 'n5', emoji: '5', label: 'П’ять' } ],
+          explain: 'У квадрата 4 однакові сторони.' },
+        { picture: '❓', prompt: 'Яка фігура не має жодного кута?', correct: 'circle',
+          options: [ { id: 'tri', emoji: '🔺', label: 'Трикутник' }, { id: 'circle', emoji: '🔵', label: 'Коло' }, { id: 'square', emoji: '🟦', label: 'Квадрат' } ],
+          explain: 'Коло кругле — у нього немає кутів.' },
+        { picture: '⚽', prompt: 'На яку фігуру схожий м’яч?', correct: 'ball',
+          options: [ { id: 'cube', emoji: '🎲', label: 'Куб' }, { id: 'ball', emoji: '🔮', label: 'Куля' }, { id: 'pyr', emoji: '🔺', label: 'Піраміда' } ],
+          explain: 'М’яч круглий з усіх боків — це куля.' }
+      ]
+    },
+    {
+      key: 'space', icon: '🚀', title: 'Космічна подорож', label: 'Космос', theme: 'lavender',
+      desc: 'Планети, зорі, космонавти.', intro: 'Полетімо в космос! Обери правильну відповідь.',
+      skill: 'знає цікаве про космос', hint: 'Подивись уважно на картинки-підказки.',
+      rounds: [
+        { picture: '🏠', prompt: 'На якій планеті ми живемо?', correct: 'earth',
+          options: [ { id: 'mars', emoji: '🔴', label: 'Марс' }, { id: 'earth', emoji: '🌍', label: 'Земля' }, { id: 'saturn', emoji: '🪐', label: 'Сатурн' } ],
+          explain: 'Наш дім — планета Земля.' },
+        { picture: '🌤️', prompt: 'Яка зоря світить нам удень?', correct: 'sun',
+          options: [ { id: 'sun', emoji: '☀️', label: 'Сонце' }, { id: 'moon', emoji: '🌙', label: 'Місяць' }, { id: 'comet', emoji: '☄️', label: 'Комета' } ],
+          explain: 'Сонце — це зоря, найближча до Землі.' },
+        { picture: '🚀', prompt: 'Хто літає в космос?', correct: 'astro',
+          options: [ { id: 'cook', emoji: '🧑‍🍳', label: 'Кухар' }, { id: 'farmer', emoji: '🧑‍🌾', label: 'Фермер' }, { id: 'astro', emoji: '🧑‍🚀', label: 'Космонавт' } ],
+          explain: 'Космонавти літають у космос на ракетах.' },
+        { picture: '💍', prompt: 'Яка планета має красиві кільця?', correct: 'saturn',
+          options: [ { id: 'saturn', emoji: '🪐', label: 'Сатурн' }, { id: 'earth', emoji: '🌍', label: 'Земля' }, { id: 'mars', emoji: '🔴', label: 'Марс' } ],
+          explain: 'Кільця Сатурна складаються з льоду і каміння.' },
+        { picture: '🔄', prompt: 'Що обертається навколо Землі?', correct: 'moon',
+          options: [ { id: 'sun', emoji: '☀️', label: 'Сонце' }, { id: 'moon', emoji: '🌙', label: 'Місяць' }, { id: 'saturn', emoji: '🪐', label: 'Сатурн' } ],
+          explain: 'Місяць — супутник Землі, він обертається навколо неї.' },
+        { picture: '🟥', prompt: 'Яку планету називають червоною?', correct: 'mars',
+          options: [ { id: 'earth', emoji: '🌍', label: 'Земля' }, { id: 'saturn', emoji: '🪐', label: 'Сатурн' }, { id: 'mars', emoji: '🔴', label: 'Марс' } ],
+          explain: 'Марс червоний через іржавий пил на поверхні.' }
+      ]
+    },
+    {
+      key: 'jobs', icon: '👷', title: 'Професії', label: 'Професії', theme: 'peach',
+      desc: 'Хто чим займається?', intro: 'Хто ким працює? Обери правильну професію.',
+      skill: 'знає різні професії', hint: 'Подумай, хто цим займається щодня.',
+      rounds: [
+        { picture: '🏥', prompt: 'Хто лікує людей?', correct: 'doctor',
+          options: [ { id: 'doctor', emoji: '🧑‍⚕️', label: 'Лікар' }, { id: 'pilot', emoji: '🧑‍✈️', label: 'Пілот' }, { id: 'baker', emoji: '🧑‍🍳', label: 'Пекар' } ],
+          explain: 'Лікар допомагає, коли людина захворіла.' },
+        { picture: '🔥', prompt: 'Хто гасить пожежі?', correct: 'fire',
+          options: [ { id: 'teacher', emoji: '🧑‍🏫', label: 'Вчитель' }, { id: 'fire', emoji: '🧑‍🚒', label: 'Пожежник' }, { id: 'farmer', emoji: '🧑‍🌾', label: 'Фермер' } ],
+          explain: 'Пожежники — сміливі рятувальники.' },
+        { picture: '🍞', prompt: 'Хто пече хліб?', correct: 'baker',
+          options: [ { id: 'coder', emoji: '🧑‍💻', label: 'Програміст' }, { id: 'doctor', emoji: '🧑‍⚕️', label: 'Лікар' }, { id: 'baker', emoji: '🧑‍🍳', label: 'Пекар' } ],
+          explain: 'Пекар щоранку пече свіжий хліб.' },
+        { picture: '📚', prompt: 'Хто навчає дітей у школі?', correct: 'teacher',
+          options: [ { id: 'teacher', emoji: '🧑‍🏫', label: 'Вчитель' }, { id: 'fire', emoji: '🧑‍🚒', label: 'Пожежник' }, { id: 'pilot', emoji: '🧑‍✈️', label: 'Пілот' } ],
+          explain: 'Вчитель допомагає дітям дізнаватись нове.' },
+        { picture: '💻', prompt: 'Хто пише програми для комп’ютерів?', correct: 'coder',
+          options: [ { id: 'baker', emoji: '🧑‍🍳', label: 'Пекар' }, { id: 'coder', emoji: '🧑‍💻', label: 'Програміст' }, { id: 'farmer', emoji: '🧑‍🌾', label: 'Фермер' } ],
+          explain: 'Програміст складає алгоритми — як ти в цій лабораторії!' },
+        { picture: '✈️', prompt: 'Хто керує літаком?', correct: 'pilot',
+          options: [ { id: 'pilot', emoji: '🧑‍✈️', label: 'Пілот' }, { id: 'teacher', emoji: '🧑‍🏫', label: 'Вчитель' }, { id: 'doctor', emoji: '🧑‍⚕️', label: 'Лікар' } ],
+          explain: 'Пілот веде літак небом.' }
+      ]
+    },
+    {
+      key: 'traffic', icon: '🚦', title: 'Безпечна дорога', label: 'Дорога', theme: 'butter',
+      desc: 'Світлофор, зебра, шолом.', intro: 'Як безпечно поводитися на дорозі?',
+      skill: 'знає правила безпечної дороги', hint: 'Подумай, як зробити так, щоб нікому не було небезпечно.',
+      rounds: [
+        { picture: '🚦', prompt: 'На яке світло світлофора можна переходити дорогу?', correct: 'green',
+          options: [ { id: 'red', emoji: '🔴', label: 'Червоне' }, { id: 'yellow', emoji: '🟡', label: 'Жовте' }, { id: 'green', emoji: '🟢', label: 'Зелене' } ],
+          explain: 'Зелене світло — можна йти, але все одно уважно.' },
+        { picture: '🛑', prompt: 'Що означає червоне світло?', correct: 'stop',
+          options: [ { id: 'stop', emoji: '✋', label: 'Стій' }, { id: 'go', emoji: '🚶', label: 'Йди' }, { id: 'run', emoji: '🏃', label: 'Біжи' } ],
+          explain: 'Червоне світло — стоп! Чекаємо.' },
+        { picture: '🛣️', prompt: 'Де правильно переходити дорогу?', correct: 'zebra',
+          options: [ { id: 'any', emoji: '🚗', label: 'Будь-де між машинами' }, { id: 'zebra', emoji: '🦓', label: 'По пішохідному переходу' }, { id: 'corner', emoji: '↩️', label: 'Через поворот' } ],
+          explain: 'Пішохідний перехід ще називають «зеброю» — через смужки.' },
+        { picture: '👀', prompt: 'Що зробити перед тим, як переходити дорогу?', correct: 'look',
+          options: [ { id: 'look', emoji: '⬅️➡️', label: 'Подивитися ліворуч і праворуч' }, { id: 'phone', emoji: '📱', label: 'Дивитися в телефон' }, { id: 'run', emoji: '🏃', label: 'Швидко бігти' } ],
+          explain: 'Спочатку переконайся, що машин немає.' },
+        { picture: '🚲', prompt: 'Що треба вдягнути, коли їдеш на велосипеді?', correct: 'helmet',
+          options: [ { id: 'hat', emoji: '🎩', label: 'Капелюх' }, { id: 'helmet', emoji: '⛑️', label: 'Шолом' }, { id: 'crown', emoji: '👑', label: 'Корону' } ],
+          explain: 'Шолом захищає голову.' },
+        { picture: '⚽', prompt: 'Де можна гратися з м’ячем?', correct: 'park',
+          options: [ { id: 'road', emoji: '🛣️', label: 'На дорозі' }, { id: 'park', emoji: '🏞️', label: 'На майданчику' }, { id: 'parking', emoji: '🅿️', label: 'На парковці' } ],
+          explain: 'Гратися треба на майданчику, подалі від машин.' }
+      ]
+    },
+    {
+      key: 'music', icon: '🎵', title: 'Музична скринька', label: 'Музика', theme: 'teal',
+      desc: 'Ноти та інструменти.', intro: 'Послухай серцем! Що ти знаєш про музику?',
+      skill: 'знає ноти й музичні інструменти', hint: 'Уяви, як грає цей інструмент.',
+      rounds: [
+        { picture: '🎼', prompt: 'Скільки нот: до, ре, мі, фа, соль, ля, сі?', correct: 'n7',
+          options: [ { id: 'n5', emoji: '5', label: 'П’ять' }, { id: 'n7', emoji: '7', label: 'Сім' }, { id: 'n10', emoji: '10', label: 'Десять' } ],
+          explain: 'Нот сім — як днів у тижні.' },
+        { picture: '🎶', prompt: 'У якого інструмента є чорні й білі клавіші?', correct: 'piano',
+          options: [ { id: 'piano', emoji: '🎹', label: 'Піаніно' }, { id: 'drum', emoji: '🥁', label: 'Барабан' }, { id: 'trumpet', emoji: '🎺', label: 'Труба' } ],
+          explain: 'На піаніно грають, натискаючи клавіші.' },
+        { picture: '🏹', prompt: 'На якому інструменті грають смичком?', correct: 'violin',
+          options: [ { id: 'trumpet', emoji: '🎺', label: 'Труба' }, { id: 'violin', emoji: '🎻', label: 'Скрипка' }, { id: 'drum', emoji: '🥁', label: 'Барабан' } ],
+          explain: 'Смичок ковзає по струнах скрипки.' },
+        { picture: '💨', prompt: 'У який інструмент треба дмухати?', correct: 'trumpet',
+          options: [ { id: 'piano', emoji: '🎹', label: 'Піаніно' }, { id: 'violin', emoji: '🎻', label: 'Скрипка' }, { id: 'trumpet', emoji: '🎺', label: 'Труба' } ],
+          explain: 'Труба — духовий інструмент.' },
+        { picture: '🥢', prompt: 'По якому інструменту б’ють паличками?', correct: 'drum',
+          options: [ { id: 'drum', emoji: '🥁', label: 'Барабан' }, { id: 'violin', emoji: '🎻', label: 'Скрипка' }, { id: 'piano', emoji: '🎹', label: 'Піаніно' } ],
+          explain: 'Барабан — ударний інструмент.' },
+        { picture: '💙💛', prompt: 'Який інструмент — український народний, з багатьма струнами?', correct: 'bandura',
+          options: [ { id: 'bandura', emoji: '🪕', label: 'Бандура' }, { id: 'drum', emoji: '🥁', label: 'Барабан' }, { id: 'trumpet', emoji: '🎺', label: 'Труба' } ],
+          explain: 'Бандура — славетний український інструмент, на ній грали кобзарі.' }
+      ]
+    }
+  ];
+
+  // Реєструємо вікторини і будуємо для кожної свій розділ
+  EXTRA_TASKS.forEach(t => {
+    QUIZZES[t.key] = { theme: t.theme, nextBtn: `#${t.key}-next`, skill: t.skill, hint: t.hint, rounds: t.rounds };
+    const sec = document.createElement('section');
+    sec.id = `sec-${t.key}`;
+    sec.className = 'step-section hidden';
+    sec.setAttribute('aria-labelledby', `h-${t.key}`);
+    sec.innerHTML = `
+      <h2 id="h-${t.key}" tabindex="-1" class="text-2xl sm:text-3xl font-extrabold mb-2">${t.icon} ${t.title}</h2>
+      <p class="text-lg mb-5">${t.intro}</p>
+      <div data-quiz="${t.key}"></div>
+      <div class="mt-6 flex flex-wrap gap-3 justify-between">
+        <button type="button" data-nav="prev" class="px-6 py-3 rounded-full bg-white border-2 border-lavender-mid font-bold hover:bg-lavender-soft">◀ Назад</button>
+        <button id="${t.key}-next" type="button" data-nav="next" disabled class="px-6 py-3 rounded-full bg-lavender-deep text-white font-extrabold hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed">Далі ▶</button>
+      </div>`;
+    $('main').insertBefore(sec, $('#step-cert'));
+  });
+
+  /* =========================================================
+     Список завдань і порядок сторінок
+     ========================================================= */
+  const TASKS = [
+    { key: 'sorting', section: 'step-2', icon: '🗂️', title: 'Розклади картки', label: 'Сортування', desc: 'Поклади кожну картку у свою коробку.', theme: 'mint',  skill: () => level().skill },
+    { key: 'algo',    section: 'step-3', icon: '🪜', title: 'Склади алгоритм', label: 'Алгоритм',   desc: 'Постав кроки по порядку.',             theme: 'peach', skill: 'вміє складати алгоритм' },
+    { key: 'odd',     section: 'step-4', icon: '🔎', title: 'Знайди зайве',    label: 'Зайве',      desc: 'Що тут не підходить?',                 theme: 'sky',   skill: QUIZZES.odd.skill },
+    { key: 'pattern', section: 'step-5', icon: '🔁', title: 'Що буде далі?',   label: 'Що далі?',   desc: 'Продовж закономірність.',              theme: 'butter', skill: QUIZZES.pattern.skill },
+    { key: 'truth',   section: 'step-6', icon: '🤔', title: 'Правда чи ні?',   label: 'Правда чи ні', desc: 'Перевір твердження.',                theme: 'rose',  skill: QUIZZES.truth.skill },
+    { key: 'robot',   section: 'step-7', icon: '🤖', title: 'Робот-помічник',  label: 'Робот',      desc: 'Проведи робота до зірочки.',           theme: 'teal',  skill: 'програмує робота' },
+    { key: 'cars',    section: 'step-8', icon: '🚗', title: 'Машини та марки', label: 'Машини',     desc: 'Відгадай марку машини за фото.',       theme: 'lime',  skill: QUIZZES.cars.skill },
+    ...EXTRA_TASKS.map(t => ({ key: t.key, section: `sec-${t.key}`, icon: t.icon, title: t.title, label: t.label, desc: t.desc, theme: t.theme, skill: t.skill }))
+  ];
+  const PAGES = [
+    { id: 'step-1', label: 'Привіт', icon: '👋' },
+    ...TASKS.map(t => ({ id: t.section, key: t.key, label: t.label, icon: t.icon })),
+    { id: 'step-cert', label: 'Нагорода', icon: '🏅' }
+  ];
+  state.currentIdx = 0;
+  state.selectedKeys = new Set(TASKS.map(t => t.key));
+
+  const isIncluded = p => !p.key || state.selectedKeys.has(p.key);
+  function nextIncluded(from, dir) {
+    let i = from + dir;
+    while (i > 0 && i < PAGES.length - 1 && !isIncluded(PAGES[i])) i += dir;
+    return Math.min(PAGES.length - 1, Math.max(0, i));
+  }
+
+  /* =========================================================
+     Вибір завдань: учень (або вчитель) сам обирає, що проходити
+     ========================================================= */
+  function renderTaskPicker() {
+    $('#task-picker').innerHTML = TASKS.map(t => {
+      const on = state.selectedKeys.has(t.key);
+      const look = on ? `${THEMES[t.theme].zone} border-4` : 'bg-white border-2 border-dashed border-lavender-mid opacity-70';
+      return `<button type="button" data-task-key="${t.key}" aria-pressed="${on}"
+          class="card flex gap-4 items-start rounded-3xl p-5 text-left ${look}">
+          <span class="text-4xl" aria-hidden="true">${t.icon}</span>
+          <span class="flex-1"><b class="block text-lg">${t.title}</b>${t.desc}</span>
+          <span class="text-2xl" aria-hidden="true">${on ? '✅' : '⬜'}</span>
+        </button>`;
+    }).join('');
+    const n = state.selectedKeys.size;
+    $('#pick-count').textContent = n ? `Обрано завдань: ${n} з ${TASKS.length}` : 'Обери хоча б одне завдання 🙂';
+    $('#start-btn').disabled = n === 0;
+    renderStepper();
+  }
+
+  $('#task-picker').addEventListener('click', e => {
+    const b = e.target.closest('[data-task-key]');
+    if (!b) return;
+    const key = b.dataset.taskKey;
+    state.selectedKeys.has(key) ? state.selectedKeys.delete(key) : state.selectedKeys.add(key);
+    sounds.select();
+    renderTaskPicker();
+    $(`[data-task-key="${key}"]`).focus({ preventScroll: true });
+  });
+  $('#pick-all').addEventListener('click', () => { TASKS.forEach(t => state.selectedKeys.add(t.key)); renderTaskPicker(); });
+  $('#pick-none').addEventListener('click', () => { state.selectedKeys.clear(); renderTaskPicker(); });
+  $('#start-btn').addEventListener('click', () => {
+    if (state.selectedKeys.size) goToPage(nextIncluded(0, 1));
+  });
+
+  /* =========================================================
+     Навігація між екранами
+     ========================================================= */
+  function renderStepper() {
+    const visible = PAGES.map((p, idx) => ({ ...p, idx })).filter(isIncluded);
+    $('#stepper').innerHTML = visible.map((p, i) => {
+      const active = p.idx === state.currentIdx;
+      const done = p.key ? state.completed.has(p.key) : p.idx < state.currentIdx;
+      const cls = active
+        ? 'bg-lavender-deep text-white border-lavender-deep'
+        : done ? 'bg-mint-mid border-mint-mid hover:bg-mint-soft' : 'bg-white border-lavender-mid text-ink/70 hover:bg-lavender-soft';
+      const sep = i < visible.length - 1 ? '<li aria-hidden="true" class="hidden sm:block w-2 h-1 rounded bg-lavender-mid"></li>' : '';
+      return `<li><button type="button" data-jump="${p.idx}" ${active ? 'aria-current="step"' : ''} title="${p.label}"
+          class="flex items-center gap-1 px-2 py-1 rounded-full border-2 font-bold text-sm ${cls}">
+          <span aria-hidden="true">${done && !active ? '✓' : p.icon}</span>
+          <span class="hidden 2xl:inline">${p.label}</span>
+          <span class="2xl:hidden" aria-hidden="true">${i + 1}</span>
+          <span class="sr-only">Перейти: ${p.label}${done ? ', виконано' : ''}</span>
+        </button></li>${sep}`;
+    }).join('');
+  }
+  $('#stepper').addEventListener('click', e => {
+    const b = e.target.closest('[data-jump]');
+    if (b) goToPage(Number(b.dataset.jump));
+  });
+
+  function goToPage(idx) {
+    if (robot.running) return;
+    state.currentIdx = idx;
+    const page = PAGES[idx];
+    $$('.step-section').forEach(sec => sec.classList.add('hidden'));
+    const section = $(`#${page.id}`);
+    section.classList.remove('hidden');
+    renderStepper();
+    if (page.id === 'step-8') loadCarPhotos();
+    if (page.id === 'step-cert') renderCertificate();
+    window.scrollTo({ top: 0 });
+    const heading = section.querySelector('[tabindex="-1"]');
+    if (heading) heading.focus({ preventScroll: true });
+  }
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('[data-nav]');
+    if (btn && !btn.disabled) goToPage(nextIncluded(state.currentIdx, btn.dataset.nav === 'next' ? 1 : -1));
+  });
+
+  /* =========================================================
+     Тематичні сертифікати для кожної категорії
+     title — назва звання, decor — емодзі для рамки-орнаменту.
+     Нова категорія без запису тут отримає сертифікат за замовчуванням.
+     ========================================================= */
+  const CERTS = {
+    sorting:  { title: 'Майстер сортування',        decor: ['🗂️', '📦', '🖥️', '💿'] },
+    algo:     { title: 'Майстер алгоритмів',        decor: ['🪜', '1️⃣', '2️⃣', '3️⃣'] },
+    odd:      { title: 'Детектив Уважність',        decor: ['🔎', '🕵️', '🧩', '⭐'] },
+    pattern:  { title: 'Знавець закономірностей',   decor: ['🔁', '🔴', '🔵', '⭐'] },
+    truth:    { title: 'Мудрий дослідник',          decor: ['🤔', '👍', '💡', '👎'] },
+    robot:    { title: 'Юний програміст роботів',   decor: ['🤖', '⬆️', '➡️', '⭐'] },
+    cars:     { title: 'Юний автоексперт',          decor: ['🚗', '🏎️', '🚙', '🏁'] },
+    safety:   { title: 'Охоронець інтернету',       decor: ['🛡️', '🔑', '💻', '✅'] },
+    keyboard: { title: 'Майстер клавіатури',        decor: ['⌨️', '🔤', '🖱️', '✨'] },
+    math:     { title: 'Юний математик',            decor: ['🔢', '➕', '➖', '🧮'] },
+    animals:  { title: 'Друг тварин',               decor: ['🐾', '🦒', '🐟', '🐝'] },
+    time:     { title: 'Хранитель часу',            decor: ['❄️', '🌸', '☀️', '🍂'] },
+    ukraine:  { title: 'Знавець України',           decor: ['💙', '💛', '🔱', '🌻'] },
+    colors:   { title: 'Юний художник',             decor: ['🎨', '🖌️', '🌈', '🔺'] },
+    space:    { title: 'Юний космонавт',            decor: ['🚀', '🪐', '🌙', '⭐'] },
+    jobs:     { title: 'Знавець професій',          decor: ['🧑‍🚒', '🧑‍⚕️', '🧑‍🍳', '🧑‍💻'] },
+    traffic:  { title: 'Знавець безпечної дороги',  decor: ['🚦', '🦓', '⛑️', '🚲'] },
+    music:    { title: 'Юний музикант',             decor: ['🎵', '🎹', '🥁', '🎻'] }
+  };
+  const taskByKey = key => TASKS.find(t => t.key === key);
+  const certFor = key => {
+    const t = taskByKey(key);
+    return CERTS[key] || { title: `Знавець: ${t.title}`, decor: [t.icon, '⭐', t.icon, '⭐'] };
+  };
+  const skillText = t => (typeof t.skill === 'function' ? t.skill() : t.skill);
+  const studentName = () => (state.studentName || '').trim() || 'Дослідник';
+  const todayText = () => new Date().toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  function certCardHTML(key) {
+    const t = taskByKey(key);
+    const c = certFor(key);
+    const th = THEMES[t.theme] || THEMES.lavender;
+    const row = Array.from({ length: 8 }, (_, i) => c.decor[i % c.decor.length]).join(' ');
+    return `
+      <div class="rounded-4xl border-[10px] border-double ${th.zone} p-6 sm:p-10 text-center bg-white">
+        <p class="text-2xl sm:text-3xl tracking-widest mb-4 select-none" aria-hidden="true">${row}</p>
+        <div class="text-7xl mb-2" aria-hidden="true">${t.icon}</div>
+        <p class="uppercase tracking-widest font-bold ${th.title} mb-1">Сертифікат</p>
+        <h2 id="cm-title" tabindex="-1" class="text-3xl sm:text-4xl font-extrabold mb-4 ${th.title}">${c.title}</h2>
+        <p class="text-lg mb-2">вручається</p>
+        <p class="cm-name text-3xl font-extrabold border-b-2 ${th.card} inline-block min-w-[12rem] pb-1 mb-4">${studentName()}</p>
+        <p class="text-lg mb-1">за те, що ${skillText(t)}.</p>
+        <p class="text-base text-ink/70 mb-4">Категорія: «${t.title}» · Лабораторія логіки</p>
+        <p class="text-base text-ink/70">${todayText()}</p>
+        <p class="text-2xl sm:text-3xl tracking-widest mt-4 select-none" aria-hidden="true">${row}</p>
+      </div>`;
+  }
+
+  // Банер «Ти отримав сертифікат!» у кожному розділі
+  TASKS.forEach(t => {
+    const sec = $(`#${t.section}`);
+    const nav = sec.lastElementChild;
+    const slot = document.createElement('div');
+    slot.dataset.certSlot = t.key;
+    slot.className = 'mt-5';
+    sec.insertBefore(slot, nav);
+  });
+
+  function renderCertSlots() {
+    TASKS.forEach(t => {
+      const slot = $(`[data-cert-slot="${t.key}"]`);
+      if (!slot) return;
+      if (!state.completed.has(t.key)) { slot.innerHTML = ''; return; }
+      const th = THEMES[t.theme] || THEMES.lavender;
+      slot.innerHTML = `
+        <div class="flex flex-wrap items-center gap-4 border-2 ${th.zone} rounded-3xl px-5 py-4">
+          <span class="text-4xl" aria-hidden="true">🏅</span>
+          <p class="flex-1 text-lg font-bold">Ти отримуєш сертифікат «${certFor(t.key).title}»!</p>
+          <button type="button" data-open-cert="${t.key}"
+            class="px-5 py-3 rounded-full bg-white border-2 ${th.card} font-extrabold hover:opacity-90">📜 Подивитись і надрукувати</button>
+        </div>`;
+    });
+  }
+
+  /* ===== Вікно сертифіката ===== */
+  let certOpenKey = null;
+  let certLastFocus = null;
+
+  function openCert(key) {
+    certOpenKey = key;
+    certLastFocus = document.activeElement;
+    $('#cm-card').innerHTML = certCardHTML(key);
+    $('#cm-name').value = state.studentName || '';
+    $('#cert-modal').classList.remove('hidden');
+    document.body.classList.add('modal-open');
+    sounds.success();
+    $('#cm-title').focus({ preventScroll: true });
+  }
+  function closeCert() {
+    if (!certOpenKey) return;
+    certOpenKey = null;
+    $('#cert-modal').classList.add('hidden');
+    document.body.classList.remove('modal-open');
+    if (certLastFocus && document.contains(certLastFocus)) certLastFocus.focus({ preventScroll: true });
+  }
+  function setStudentName(v) {
+    state.studentName = v;
+    $$('.cm-name').forEach(el => (el.textContent = studentName()));
+    if ($('#student-name').value !== v) $('#student-name').value = v;
+    if ($('#cm-name').value !== v) $('#cm-name').value = v;
+    $('#cert-name').textContent = studentName();
+  }
+
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-open-cert]');
+    if (b) openCert(b.dataset.openCert);
+  });
+  $('#cm-close').addEventListener('click', closeCert);
+  $('#cm-print').addEventListener('click', () => window.print());
+  $('#cm-name').addEventListener('input', e => setStudentName(e.target.value));
+  $('#cert-modal').addEventListener('click', e => { if (e.target.id === 'cert-modal') closeCert(); });
+  document.addEventListener('keydown', e => {
+    if (!certOpenKey) return;
+    if (e.key === 'Escape') { e.preventDefault(); closeCert(); return; }
+    if (e.key === 'Tab') {   // фокус лишається у вікні
+      const f = $$('#cert-modal button, #cert-modal input, #cert-modal [tabindex="-1"]');
+      const first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  });
+
+  /* =========================================================
+     Завдання 1: Сортування
+     ========================================================= */
+  const level = () => SORTING_LEVELS.find(l => l.id === state.sortingLevel);
+  const itemById = id => level().items.find(i => i.id === id);
+  const categoryById = id => level().categories.find(c => c.id === id);
+  const hash = str => [...str].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
+  const poolOrder = () => level().items.map(i => i.id).sort((a, b) => hash(a) - hash(b));
+
+  function renderLevelPicker() {
+    $('#level-picker').innerHTML = SORTING_LEVELS.map(l => {
+      const active = l.id === state.sortingLevel;
+      const chips = l.categories.map(c =>
+        `<span class="inline-block w-3 h-3 rounded-full ${THEMES[c.theme].chip}" aria-hidden="true"></span>`).join('');
+      return `<button type="button" data-level="${l.id}" aria-pressed="${active}"
+          class="flex flex-col items-start gap-1 px-5 py-3 rounded-3xl border-2 font-bold text-left
+            ${active ? 'bg-lavender-soft border-lavender-deep' : 'bg-white border-lavender-mid hover:bg-lavender-soft'}">
+          <span class="text-lg">${l.icon} ${l.label} · ${l.categories.length} коробки</span>
+          <span class="flex items-center gap-1 text-sm font-semibold text-ink/70">${chips}<span class="ml-1">${l.grade}</span></span>
+        </button>`;
+    }).join('');
+  }
+
+  function renderZones() {
+    const cats = level().categories;
+    const cols = { 2: 'sm:grid-cols-2', 3: 'md:grid-cols-3', 4: 'sm:grid-cols-2 xl:grid-cols-4' }[cats.length] || 'sm:grid-cols-2 lg:grid-cols-3';
+    const zones = $('#zones');
+    zones.className = `grid gap-5 ${cols}`;
+    zones.innerHTML = cats.map(c => {
+      const t = THEMES[c.theme] || THEMES.lavender;
+      return `<div data-zone="${c.id}" role="button" tabindex="0"
+          aria-label="Коробка: ${c.name}. ${c.hint}"
+          class="zone rounded-3xl border-4 border-dashed ${t.zone} p-4 min-h-[14rem] flex flex-col">
+          <p class="font-extrabold text-xl ${t.title}"><span aria-hidden="true">${c.emoji}</span> ${c.name}</p>
+          <p class="text-base mb-3 text-ink/80">${c.hint}</p>
+          <div class="zone-items flex flex-wrap gap-3"></div>
+        </div>`;
+    }).join('');
+  }
+
+  function resetSorting() {
+    state.placements = {};
+    level().items.forEach(i => (state.placements[i.id] = 'pool'));
+    state.selectedItemForSorting = null;
+    state.reviewIds.clear();
+    $('#sort-next').disabled = !state.completed.has('sorting');
+    setFeedback('#sort-feedback', null);
+    renderLevelPicker();
+    renderZones();
+    renderSorting();
+  }
+
+  function cardHTML(item, zoneId) {
+    const selected = state.selectedItemForSorting === item.id;
+    const review = state.reviewIds.has(item.id);
+    const cat = zoneId !== 'pool' ? categoryById(zoneId) : null;
+    const border = cat ? THEMES[cat.theme].card : 'border-lavender-mid';
+    return `<button type="button" draggable="true" data-card="${item.id}"
+        aria-pressed="${selected}"
+        aria-label="${item.name}${selected ? ', обрано' : ''}${review ? ', варто переглянути' : ''}"
+        class="card ${selected ? 'is-selected' : ''} ${review ? 'needs-review' : ''} flex items-center gap-2 bg-white border-2 ${border} rounded-2xl px-4 py-3 text-lg font-bold shadow-sm cursor-grab min-h-[3.5rem]">
+        <span class="text-3xl" aria-hidden="true">${item.emoji}</span>
+        <span>${item.name}</span>
+        ${review ? '<span aria-hidden="true">🔍</span>' : ''}
+      </button>`;
+  }
+
+  function renderSorting() {
+    ['pool', ...level().categories.map(c => c.id)].forEach(zoneId => {
+      const order = zoneId === 'pool' ? poolOrder() : level().items.map(i => i.id);
+      const ids = order.filter(id => state.placements[id] === zoneId);
+      $(`[data-zone="${zoneId}"] .zone-items`).innerHTML = ids.length
+        ? ids.map(id => cardHTML(itemById(id), zoneId)).join('')
+        : `<p class="text-ink/50 italic py-2">${zoneId === 'pool' ? 'Усі картки розкладено 👍' : 'Поклади картки сюди'}</p>`;
+    });
+    const left = Object.values(state.placements).filter(z => z === 'pool').length;
+    $('#pool-count').textContent = `(залишилось: ${left} з ${level().items.length})`;
+    $$('#step-2 [data-zone]').forEach(z => z.classList.toggle('is-target', !!state.selectedItemForSorting));
+  }
+
+  function moveItem(id, zone) {
+    if (!id || !(id in state.placements)) return;
+    const changed = state.placements[id] !== zone;
+    state.placements[id] = zone;
+    state.selectedItemForSorting = null;
+    state.reviewIds.delete(id);
+    renderSorting();
+    if (changed) sounds.place();
+    const moved = $(`[data-card="${id}"]`);
+    if (moved) moved.focus({ preventScroll: true });
+  }
+
+  $('#level-picker').addEventListener('click', e => {
+    const btn = e.target.closest('[data-level]');
+    if (!btn || btn.dataset.level === state.sortingLevel) return;
+    state.sortingLevel = btn.dataset.level;
+    resetSorting();
+    sounds.select();
+    const l = level();
+    setFeedback('#sort-feedback', { tone: 'info', text: `Рівень «${l.label}»: ${l.categories.length} коробки і ${l.items.length} карток. Картки розкладаємо з початку.` });
+    $(`[data-level="${l.id}"]`).focus({ preventScroll: true });
+  });
+
+  $('#step-2').addEventListener('click', e => {
+    if (e.target.closest('#level-picker')) return;
+    const card = e.target.closest('[data-card]');
+    if (card) {
+      const id = card.dataset.card;
+      state.selectedItemForSorting = state.selectedItemForSorting === id ? null : id;
+      if (state.selectedItemForSorting) sounds.select();
+      renderSorting();
+      const again = $(`[data-card="${id}"]`);
+      if (again) again.focus({ preventScroll: true });
+      setFeedback('#sort-feedback', state.selectedItemForSorting
+        ? { tone: 'info', text: `Обрано: <b>${itemById(id).name}</b>. Тепер натисни на коробку.` }
+        : null);
+      return;
+    }
+    const zone = e.target.closest('[data-zone]');
+    if (zone && state.selectedItemForSorting) {
+      moveItem(state.selectedItemForSorting, zone.dataset.zone);
+      setFeedback('#sort-feedback', null);
+    }
+  });
+
+  $('#step-2').addEventListener('keydown', e => {
+    const zone = e.target.closest('[data-zone]');
+    if (zone && e.target === zone && (e.key === 'Enter' || e.key === ' ') && state.selectedItemForSorting) {
+      e.preventDefault();
+      moveItem(state.selectedItemForSorting, zone.dataset.zone);
+      setFeedback('#sort-feedback', null);
+    }
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && state.selectedItemForSorting) {
+      state.selectedItemForSorting = null;
+      renderSorting();
+      setFeedback('#sort-feedback', null);
+    }
+  });
+
+  const clearOver = () => $$('#step-2 [data-zone]').forEach(z => z.classList.remove('is-over'));
+  $('#step-2').addEventListener('dragstart', e => {
+    const card = e.target.closest('[data-card]');
+    if (!card) return;
+    e.dataTransfer.setData('text/plain', card.dataset.card);
+    e.dataTransfer.effectAllowed = 'move';
+    card.classList.add('is-dragging');
+  });
+  $('#step-2').addEventListener('dragend', e => {
+    const card = e.target.closest('[data-card]');
+    if (card) card.classList.remove('is-dragging');
+    clearOver();
+  });
+  $('#step-2').addEventListener('dragover', e => {
+    const zone = e.target.closest('[data-zone]');
+    if (!zone) return;
+    e.preventDefault();
+    if (!zone.classList.contains('is-over')) { clearOver(); zone.classList.add('is-over'); }
+  });
+  $('#step-2').addEventListener('drop', e => {
+    const zone = e.target.closest('[data-zone]');
+    if (!zone) return;
+    e.preventDefault();
+    clearOver();
+    moveItem(e.dataTransfer.getData('text/plain'), zone.dataset.zone);
+    setFeedback('#sort-feedback', null);
+  });
+
+  $('#sort-check').addEventListener('click', () => {
+    const items = level().items;
+    const left = items.filter(i => state.placements[i.id] === 'pool');
+    if (left.length) {
+      sounds.hint();
+      setFeedback('#sort-feedback', { tone: 'hint', text: `Ще залишились картки: <b>${left.length}</b>. Розклади їх у коробки 🙂` });
+      return;
+    }
+    const wrong = items.filter(i => state.placements[i.id] !== i.category);
+    state.reviewIds = new Set(wrong.map(i => i.id));
+    renderSorting();
+    if (wrong.length === 0) {
+      sounds.success();
+      markDone('sorting');
+      $('#sort-next').disabled = false;
+      setFeedback('#sort-feedback', { tone: 'ok', text: 'Чудово! Усі картки на своїх місцях 🎉 Натисни «Далі».' });
+      $('#sort-next').focus();
+    } else {
+      sounds.hint();
+      setFeedback('#sort-feedback', { tone: 'hint', text: `Майже! Картки з позначкою 🔍 (${wrong.length}) варто перенести в іншу коробку.
+        <br><span class="text-base">Підказка: прочитай опис під назвою кожної коробки.</span>` });
+    }
+  });
+  $('#sort-reset').addEventListener('click', resetSorting);
+
+  /* =========================================================
+     Завдання 2: Алгоритм (кілька тем)
+     ========================================================= */
+  const topic = () => ALGO_TOPICS.find(t => t.id === state.algoTopic);
+  const algoStep = id => topic().steps.find(s => s.id === id);
+  const correctIndex = id => topic().steps.findIndex(s => s.id === id);
+
+  function renderAlgoTopics() {
+    $('#algo-topics').innerHTML = ALGO_TOPICS.map(t => {
+      const active = t.id === state.algoTopic;
+      const solved = state.algoSolved.has(t.id);
+      return `<button type="button" data-topic="${t.id}" aria-pressed="${active}"
+          aria-label="Тема: ${t.title}${solved ? ', виконано' : ''}"
+          class="flex items-center gap-2 px-5 py-3 rounded-3xl border-2 font-bold text-lg
+            ${active ? 'bg-peach-soft border-peach-deep' : 'bg-white border-peach-mid hover:bg-peach-soft'}">
+          <span aria-hidden="true">${t.icon}</span> ${t.short} ${solved ? '<span aria-hidden="true">✅</span>' : ''}
+        </button>`;
+    }).join('');
+    $('#algo-title').textContent = topic().title;
+  }
+
+  function resetSequence() {
+    state.currentSequence = [...topic().start];
+    state.seqChecked = false;
+    $('#seq-next').disabled = state.algoSolved.size === 0;
+    setFeedback('#seq-feedback', null);
+    renderAlgoTopics();
+    renderSequence();
+  }
+
+  function renderSequence() {
+    const last = state.currentSequence.length - 1;
+    $('#sequence-list').innerHTML = state.currentSequence.map((id, idx) => {
+      const s = algoStep(id);
+      const correct = state.seqChecked && correctIndex(id) === idx;
+      const border = state.seqChecked
+        ? (correct ? 'border-mint-mid bg-mint-soft' : 'border-butter-mid bg-butter-soft')
+        : 'border-lavender-mid bg-white';
+      return `<li class="flex items-center gap-3 border-2 ${border} rounded-3xl p-3 sm:p-4 shadow-sm">
+          <span class="flex-none w-10 h-10 rounded-full bg-lavender-soft border-2 border-lavender-mid flex items-center justify-center font-extrabold text-lg" aria-hidden="true">${idx + 1}</span>
+          <span class="text-3xl" aria-hidden="true">${s.emoji}</span>
+          <span class="flex-1 text-lg font-bold">${s.text}</span>
+          ${state.seqChecked ? `<span aria-hidden="true" class="text-xl">${correct ? '✅' : '🔍'}</span>` : ''}
+          <span class="flex gap-2">
+            <button type="button" data-move="up" data-id="${id}" ${idx === 0 ? 'disabled' : ''}
+              aria-label="Підняти крок «${s.text}» вище"
+              class="w-12 h-12 rounded-2xl bg-sky-soft border-2 border-sky-mid text-xl hover:bg-sky-mid disabled:opacity-30 disabled:cursor-not-allowed">⬆️</button>
+            <button type="button" data-move="down" data-id="${id}" ${idx === last ? 'disabled' : ''}
+              aria-label="Опустити крок «${s.text}» нижче"
+              class="w-12 h-12 rounded-2xl bg-sky-soft border-2 border-sky-mid text-xl hover:bg-sky-mid disabled:opacity-30 disabled:cursor-not-allowed">⬇️</button>
+          </span>
+        </li>`;
+    }).join('');
+  }
+
+  $('#algo-topics').addEventListener('click', e => {
+    const btn = e.target.closest('[data-topic]');
+    if (!btn || btn.dataset.topic === state.algoTopic) return;
+    state.algoTopic = btn.dataset.topic;
+    resetSequence();
+    sounds.select();
+    $(`[data-topic="${state.algoTopic}"]`).focus({ preventScroll: true });
+  });
+
+  $('#sequence-list').addEventListener('click', e => {
+    const btn = e.target.closest('[data-move]');
+    if (!btn || btn.disabled) return;
+    const id = btn.dataset.id;
+    const dir = btn.dataset.move;
+    const i = state.currentSequence.indexOf(id);
+    const j = dir === 'up' ? i - 1 : i + 1;
+    if (j < 0 || j >= state.currentSequence.length) return;
+    [state.currentSequence[i], state.currentSequence[j]] = [state.currentSequence[j], state.currentSequence[i]];
+    state.seqChecked = false;
+    setFeedback('#seq-feedback', null);
+    renderSequence();
+    sounds.move();
+    let target = $(`[data-move="${dir}"][data-id="${id}"]`);
+    if (!target || target.disabled) target = $(`[data-move="${dir === 'up' ? 'down' : 'up'}"][data-id="${id}"]`);
+    if (target) target.focus({ preventScroll: true });
+  });
+
+  $('#seq-check').addEventListener('click', () => {
+    state.seqChecked = true;
+    const total = state.currentSequence.length;
+    const correctCount = state.currentSequence.filter((id, idx) => correctIndex(id) === idx).length;
+    renderSequence();
+    if (correctCount === total) {
+      sounds.success();
+      state.algoSolved.add(state.algoTopic);
+      markDone('algo');
+      renderAlgoTopics();
+      $('#seq-next').disabled = false;
+      const more = ALGO_TOPICS.length > state.algoSolved.size;
+      setFeedback('#seq-feedback', { tone: 'ok', text: `Так! Алгоритм складено правильно 🎉
+        <br><span class="text-base">${more ? 'Можеш спробувати іншу тему вгорі або натиснути «Далі».' : 'Усі теми виконано! Натисни «Далі».'}</span>` });
+      $('#seq-next').focus();
+    } else {
+      sounds.hint();
+      setFeedback('#seq-feedback', { tone: 'hint', text: `На своїх місцях: <b>${correctCount} з ${total}</b> ✅. Кроки з 🔍 спробуй пересунути.
+        <br><span class="text-base">Підказка: що треба зробити найпершим?</span>` });
+    }
+  });
+  $('#seq-reset').addEventListener('click', resetSequence);
+
+  /* =========================================================
+     Завдання 3–5: Вікторини (спільний рушій)
+     ========================================================= */
+  function resetQuiz(key) {
+    quizState[key] = { round: 0, solved: false, wrong: new Set(), done: false, msg: null };
+    $(QUIZZES[key].nextBtn).disabled = true;
+    renderQuiz(key);
+  }
+
+  function renderQuiz(key) {
+    const cfg = QUIZZES[key];
+    const st = quizState[key];
+    const r = cfg.rounds[st.round];
+    const total = cfg.rounds.length;
+    const correctOpt = r.options.find(o => o.id === r.correct);
+
+    const dots = cfg.rounds.map((_, i) => {
+      const done = i < st.round || (i === st.round && st.solved);
+      const cur = i === st.round;
+      return `<span class="w-4 h-4 rounded-full border-2 ${done ? 'bg-mint-mid border-mint-deep' : cur ? 'bg-lavender-mid border-lavender-deep' : 'bg-white border-lavender-mid'}"></span>`;
+    }).join('');
+
+    const box = 'flex items-center justify-center rounded-2xl text-3xl sm:text-4xl font-extrabold w-14 h-14 sm:w-16 sm:h-16';
+    const seq = r.sequence
+      ? `<div class="flex flex-wrap items-center gap-2 sm:gap-3 my-5" role="img" aria-label="${r.sequenceLabel}">
+          ${r.sequence.map(e => `<span class="${box} bg-white border-2 border-lavender-mid">${e}</span>`).join('')}
+          <span class="${box} border-4 border-dashed ${st.solved ? 'border-mint-deep bg-mint-soft' : 'border-lavender-deep bg-lavender-soft'}">${st.solved ? correctOpt.emoji : '?'}</span>
+        </div>`
+      : '';
+    const picture = r.carId
+      ? `<div class="max-w-md mx-auto mb-4">
+           <div data-car-photo="${r.carId}" data-hide-name="1" class="aspect-[4/3] rounded-3xl overflow-hidden border-2 border-lime-mid bg-white">${carPhotoInner(r.carId, true)}</div>
+           <div data-car-credit="${r.carId}" class="mt-1 text-right">${carCreditInner(r.carId)}</div>
+         </div>`
+      : r.picture ? `<div class="text-6xl sm:text-7xl mb-3" aria-hidden="true">${r.picture}</div>` : '';
+
+    const n = r.options.length;
+    const cols = n === 2 ? 'grid-cols-2' : n === 3 ? 'grid-cols-3' : 'grid-cols-2 sm:grid-cols-4';
+    const opts = r.options.map(o => {
+      const isWrong = st.wrong.has(o.id);
+      const isRight = st.solved && o.id === r.correct;
+      const look = isRight ? 'bg-mint-soft border-mint-deep border-4'
+        : isWrong ? 'needs-review opacity-70'
+        : 'bg-white border-lavender-mid hover:bg-lavender-soft';
+      const disabled = st.solved || isWrong;
+      return `<button type="button" data-quiz-key="${key}" data-opt="${o.id}" ${disabled ? 'disabled' : ''}
+          aria-label="${o.label}${isRight ? ', правильно' : ''}${isWrong ? ', спробуй іншу відповідь' : ''}"
+          class="card flex flex-col items-center justify-center gap-2 border-2 ${look} rounded-3xl p-4 ${o.emoji ? 'min-h-[8rem]' : 'min-h-[5rem]'} font-bold shadow-sm disabled:cursor-default">
+          ${o.emoji ? `<span class="text-5xl font-extrabold" aria-hidden="true">${o.emoji}</span>` : ''}
+          <span class="${o.emoji ? 'text-lg' : 'text-xl sm:text-2xl font-extrabold'} text-center">${o.label}</span>
+          ${isRight ? '<span aria-hidden="true">✅</span>' : ''}
+        </button>`;
+    }).join('');
+
+    const nextRound = st.solved && !st.done
+      ? `<button type="button" data-quiz-next="${key}" class="mt-4 px-6 py-3 rounded-full bg-sky-deep text-white font-extrabold hover:opacity-90">Наступна задачка ▶</button>`
+      : '';
+
+    $(`[data-quiz="${key}"]`).innerHTML = `
+      <div class="flex flex-wrap items-center gap-3 mb-4">
+        <div class="flex gap-2" aria-hidden="true">${dots}</div>
+        <span class="font-bold">Задачка ${st.round + 1} з ${total}</span>
+      </div>
+      <div class="rounded-4xl border-2 ${THEMES[cfg.theme].zone} p-5 sm:p-8 text-center">
+        ${picture}
+        <p class="text-xl sm:text-2xl font-extrabold">${r.prompt}</p>
+        ${seq}
+        <div class="grid ${cols} gap-3 sm:gap-4 mt-5 max-w-3xl mx-auto">${opts}</div>
+      </div>
+      <div class="mt-5" role="status" aria-live="polite">${feedbackBox(st.msg)}${nextRound}</div>`;
+  }
+
+  document.addEventListener('click', e => {
+    const opt = e.target.closest('[data-opt]');
+    if (opt && !opt.disabled) {
+      const key = opt.dataset.quizKey;
+      const cfg = QUIZZES[key];
+      const st = quizState[key];
+      const r = cfg.rounds[st.round];
+      if (opt.dataset.opt === r.correct) {
+        st.solved = true;
+        const last = st.round === cfg.rounds.length - 1;
+        if (last) {
+          st.done = true;
+          markDone(key);
+          $(cfg.nextBtn).disabled = false;
+          sounds.success();
+          st.msg = { tone: 'ok', text: `${r.explain}<br>Усі задачки розв’язано! 🎉 Натисни «Далі».` };
+        } else {
+          sounds.right();
+          st.msg = { tone: 'ok', text: `Правильно! ${r.explain}` };
+        }
+        renderQuiz(key);
+        const focusTarget = last ? $(cfg.nextBtn) : $(`[data-quiz-next="${key}"]`);
+        if (focusTarget) focusTarget.focus({ preventScroll: true });
+      } else {
+        st.wrong.add(opt.dataset.opt);
+        sounds.hint();
+        st.msg = { tone: 'hint', text: `Спробуй ще раз. ${cfg.hint}` };
+        renderQuiz(key);
+        const firstFree = $(`[data-quiz="${key}"] [data-opt]:not([disabled])`);
+        if (firstFree) firstFree.focus({ preventScroll: true });
+      }
+      return;
+    }
+    const next = e.target.closest('[data-quiz-next]');
+    if (next) {
+      const key = next.dataset.quizNext;
+      const st = quizState[key];
+      st.round += 1;
+      st.solved = false;
+      st.wrong = new Set();
+      st.msg = null;
+      renderQuiz(key);
+      const first = $(`[data-quiz="${key}"] [data-opt]`);
+      if (first) first.focus({ preventScroll: true });
+    }
+  });
+
+  /* =========================================================
+     Завдання 7: Машини — фото з Вікіпедії, галерея, вкладки
+     ========================================================= */
+  const carPhotos = {};           // { [id]: { status: 'loading'|'ok'|'fail', src, fallback, credit } }
+  let carPhotosStarted = false;
+  let carTab = 'learn';
+
+  function carPhotoInner(id, hideName) {
+    const car = carById(id);
+    const p = carPhotos[id];
+    if (p && p.status === 'ok') {
+      const alt = hideName ? 'Фото машини' : `Фото: ${car.brand} ${car.model}`;
+      return `<img src="${p.src}" ${p.fallback ? `data-fallback="${p.fallback}"` : ''} data-car-img="${id}"
+          alt="${alt}" loading="lazy" referrerpolicy="no-referrer" class="w-full h-full object-cover" />`;
+    }
+    if (p && p.status === 'fail') {
+      return `<div class="w-full h-full flex flex-col items-center justify-center bg-lime-soft text-6xl" role="img" aria-label="Фото недоступне">🚗
+          <span class="text-sm font-semibold text-ink/60 mt-2 px-3 text-center">Фото не завантажилось — потрібен інтернет</span></div>`;
+    }
+    return `<div class="w-full h-full flex flex-col items-center justify-center bg-lime-soft text-5xl animate-pulse" role="img" aria-label="Фото завантажується">🚗
+        <span class="text-sm font-semibold text-ink/60 mt-2">Завантажую фото…</span></div>`;
+  }
+  function carCreditInner(id) {
+    const p = carPhotos[id];
+    return p && p.status === 'ok' && p.credit
+      ? `<a href="${p.credit}" target="_blank" rel="noopener" class="text-xs underline text-ink/60 hover:text-ink">Фото: Wikimedia Commons</a>`
+      : '';
+  }
+  function refreshCarPhoto(id) {
+    $$(`[data-car-photo="${id}"]`).forEach(el => (el.innerHTML = carPhotoInner(id, el.dataset.hideName === '1')));
+    $$(`[data-car-credit="${id}"]`).forEach(el => (el.innerHTML = carCreditInner(id)));
+  }
+
+  // Якщо фото не відкрилось — пробуємо запасний розмір, далі — заглушка
+  document.addEventListener('error', e => {
+    const img = e.target;
+    if (!(img instanceof HTMLImageElement) || !img.dataset.carImg) return;
+    const id = img.dataset.carImg;
+    if (img.dataset.fallback && img.src !== img.dataset.fallback) {
+      carPhotos[id].src = img.dataset.fallback;
+      carPhotos[id].fallback = null;
+      img.removeAttribute('data-fallback');
+      img.src = carPhotos[id].src;
+    } else {
+      carPhotos[id] = { status: 'fail' };
+      refreshCarPhoto(id);
+    }
+  }, true);
+
+  async function fetchWikiPhoto(car) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 9000);
+    try {
+      const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(car.wiki)}`, { signal: ctrl.signal });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      const orig = data.originalimage, thumb = data.thumbnail;
+      if (!orig && !thumb) throw new Error('no image');
+      let src = thumb ? thumb.source : orig.source;
+      if (thumb && orig && orig.width >= 500 && /\/\d+px-/.test(thumb.source)) src = thumb.source.replace(/\/\d+px-/, '/500px-');
+      const fileUrl = (orig || thumb).source;
+      let credit = data.content_urls && data.content_urls.desktop ? data.content_urls.desktop.page : null;
+      if (fileUrl.includes('/wikipedia/commons/')) {
+        const parts = fileUrl.split('/');
+        const name = fileUrl.includes('/thumb/') ? parts[parts.length - 2] : parts[parts.length - 1];
+        credit = `https://commons.wikimedia.org/wiki/File:${name}`;
+      }
+      return { status: 'ok', src, fallback: thumb && src !== thumb.source ? thumb.source : null, credit };
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  function loadCarPhotos() {
+    if (carPhotosStarted) return;
+    carPhotosStarted = true;
+    CARS.forEach(car => {
+      if (car.photo) {
+        carPhotos[car.id] = { status: 'ok', src: car.photo, fallback: null, credit: car.credit || null };
+        refreshCarPhoto(car.id);
+        return;
+      }
+      carPhotos[car.id] = { status: 'loading' };
+      fetchWikiPhoto(car)
+        .then(p => { carPhotos[car.id] = p; })
+        .catch(() => { carPhotos[car.id] = { status: 'fail' }; })
+        .finally(() => refreshCarPhoto(car.id));
+    });
+  }
+
+  function renderCarGallery() {
+    $('#car-gallery').innerHTML = CARS.map(car => `
+      <article class="bg-white rounded-3xl border-2 border-lime-mid overflow-hidden shadow-sm flex flex-col">
+        <div data-car-photo="${car.id}" class="aspect-[4/3] bg-lime-soft">${carPhotoInner(car.id, false)}</div>
+        <div class="p-4 flex flex-col gap-1 flex-1">
+          <h3 class="text-2xl font-extrabold text-lime-deep">${car.brand}</h3>
+          <p class="font-bold">${car.model}</p>
+          <p class="text-sm font-semibold text-ink/70">🌍 Країна: ${car.country}</p>
+          <p class="text-base mt-1">${car.fact}</p>
+          <div data-car-credit="${car.id}" class="mt-auto pt-2">${carCreditInner(car.id)}</div>
+        </div>
+      </article>`).join('');
+  }
+
+  function setCarTab(tab, focus) {
+    carTab = tab;
+    $('#cars-learn').classList.toggle('hidden', tab !== 'learn');
+    $('#cars-quiz').classList.toggle('hidden', tab !== 'quiz');
+    [['learn', '#tab-learn'], ['quiz', '#tab-quiz']].forEach(([t, sel]) => {
+      const b = $(sel);
+      const on = t === tab;
+      b.setAttribute('aria-selected', String(on));
+      b.className = `px-5 py-3 rounded-full border-2 font-bold text-lg ${on ? 'bg-lime-mid border-lime-deep' : 'bg-white border-lime-mid hover:bg-lime-soft'}`;
+    });
+    if (focus) $(tab === 'learn' ? '#tab-learn' : '#tab-quiz').focus({ preventScroll: true });
+  }
+  document.addEventListener('click', e => {
+    const t = e.target.closest('[data-car-tab]');
+    if (!t) return;
+    setCarTab(t.dataset.carTab, true);
+    sounds.select();
+    if (t.dataset.carTab === 'quiz') $('#step-8').scrollIntoView({ block: 'start' });
+  });
+
+  /* =========================================================
+     Завдання 6: Робот-помічник
+     ========================================================= */
+  const cellKey = (r, c) => `${r},${c}`;
+  const robotLevel = () => ROBOT_LEVELS[robot.level];
+
+  function robotToStart() {
+    const L = robotLevel();
+    robot.pos = [...L.start];
+    robot.trail = new Set([cellKey(...L.start)]);
+    robot.activeIdx = -1;
+  }
+
+  function robotStartLevel(idx) {
+    robot.level = idx;
+    robot.program = [];
+    robot.msg = null;
+    robot.showNextLevel = false;
+    robotToStart();
+    renderRobot();
+  }
+
+  function resetRobot() {
+    robot.done = false;
+    $('#robot-next').disabled = true;
+    robotStartLevel(0);
+  }
+
+  function renderRobot() {
+    const L = robotLevel();
+    const isRock = (r, c) => L.rocks.some(([rr, cc]) => rr === r && cc === c);
+
+    $('#robot-dots').innerHTML = ROBOT_LEVELS.map((_, i) => {
+      const done = i < robot.level || (i === robot.level && robot.showNextLevel) || robot.done;
+      const cur = i === robot.level;
+      return `<span class="w-4 h-4 rounded-full border-2 ${done ? 'bg-mint-mid border-mint-deep' : cur ? 'bg-lavender-mid border-lavender-deep' : 'bg-white border-lavender-mid'}"></span>`;
+    }).join('');
+    $('#robot-level-label').textContent = `Рівень ${robot.level + 1} з ${ROBOT_LEVELS.length}`;
+
+    let cells = '';
+    for (let r = 0; r < L.size; r++) {
+      for (let c = 0; c < L.size; c++) {
+        const here = robot.pos[0] === r && robot.pos[1] === c;
+        const star = L.star[0] === r && L.star[1] === c;
+        const rock = isRock(r, c);
+        const trail = robot.trail.has(cellKey(r, c));
+        const bg = rock ? 'bg-peach-mid' : star ? 'bg-butter-mid' : trail ? 'bg-lavender-mid' : 'bg-white';
+        const content = here ? (star ? '🤖<span class="text-base">⭐</span>' : '🤖') : star ? '⭐' : rock ? '🪨' : '';
+        cells += `<div class="robot-cell aspect-square rounded-xl ${bg} flex items-center justify-center text-2xl sm:text-4xl">${content}</div>`;
+      }
+    }
+    const grid = $('#robot-grid');
+    grid.style.gridTemplateColumns = `repeat(${L.size}, minmax(0, 1fr))`;
+    grid.innerHTML = cells;
+    const rocksText = L.rocks.length ? `Каміння: ${L.rocks.map(([r, c]) => `рядок ${r + 1} стовпчик ${c + 1}`).join('; ')}.` : 'Каміння немає.';
+    grid.setAttribute('aria-label',
+      `Поле ${L.size} на ${L.size}. Робот: рядок ${robot.pos[0] + 1}, стовпчик ${robot.pos[1] + 1}. ` +
+      `Зірочка: рядок ${L.star[0] + 1}, стовпчик ${L.star[1] + 1}. ${rocksText}`);
+
+    $('#robot-program').innerHTML = robot.program.length
+      ? robot.program.map((cmd, i) => `<li class="flex items-center gap-1 px-2 py-1 rounded-xl border-2 text-2xl
+            ${i === robot.activeIdx ? 'bg-lavender-mid border-lavender-deep' : 'bg-sky-soft border-sky-mid'}">
+            <span class="text-xs font-bold text-ink/60" aria-hidden="true">${i + 1}</span>
+            <span aria-hidden="true">${DIRS[cmd].e}</span><span class="sr-only">${DIRS[cmd].name}</span>
+          </li>`).join('')
+      : '<li class="text-ink/50 italic self-center">Тут з’явиться програма. Натискай стрілки ⬆️⬇️⬅️➡️</li>';
+    $('#robot-count').textContent = robot.program.length;
+
+    $$('#step-7 [data-cmd]').forEach(b => (b.disabled = robot.running));
+    $('#robot-run').disabled = robot.running;
+    $('#robot-undo').disabled = robot.running || !robot.program.length;
+    $('#robot-clear').disabled = robot.running || !robot.program.length;
+
+    const nextLevelBtn = robot.showNextLevel
+      ? `<button type="button" id="robot-next-level" class="mt-4 px-6 py-3 rounded-full bg-sky-deep text-white font-extrabold hover:opacity-90">Наступний рівень ▶</button>`
+      : '';
+    $('#robot-feedback').innerHTML = feedbackBox(robot.msg) + nextLevelBtn;
+  }
+
+  function editProgram(fn) {
+    if (robot.running) return;
+    fn();
+    robot.msg = null;
+    robot.showNextLevel = false;
+    robotToStart();
+    renderRobot();
+  }
+
+  $('#step-7').addEventListener('click', e => {
+    const cmdBtn = e.target.closest('[data-cmd]');
+    if (cmdBtn && !cmdBtn.disabled) {
+      if (robot.program.length >= ROBOT_MAX_STEPS) {
+        robot.msg = { tone: 'hint', text: `Програма вже має ${ROBOT_MAX_STEPS} кроків. Спробуй коротший шлях 🙂` };
+        renderRobot();
+        return;
+      }
+      editProgram(() => robot.program.push(cmdBtn.dataset.cmd));
+      sounds.move();
+      return;
+    }
+    if (e.target.closest('#robot-next-level')) {
+      robotStartLevel(robot.level + 1);
+      $('#step-7 [data-cmd]').focus({ preventScroll: true });
+    }
+  });
+  $('#robot-undo').addEventListener('click', () => editProgram(() => robot.program.pop()));
+  $('#robot-clear').addEventListener('click', () => editProgram(() => (robot.program = [])));
+
+  $('#robot-run').addEventListener('click', async () => {
+    if (robot.running) return;
+    if (!robot.program.length) {
+      sounds.hint();
+      robot.msg = { tone: 'hint', text: 'Спочатку склади програму — натискай стрілки.' };
+      renderRobot();
+      return;
+    }
+    const L = robotLevel();
+    const delay = reducedMotion() ? 120 : 450;
+    robot.running = true;
+    robot.msg = { tone: 'info', text: 'Робот виконує програму…' };
+    robot.showNextLevel = false;
+    robotToStart();
+    renderRobot();
+    await sleep(delay);
+
+    let blocked = null;
+    for (let i = 0; i < robot.program.length; i++) {
+      robot.activeIdx = i;
+      const [dr, dc] = DIRS[robot.program[i]].d;
+      const nr = robot.pos[0] + dr;
+      const nc = robot.pos[1] + dc;
+      const outside = nr < 0 || nc < 0 || nr >= L.size || nc >= L.size;
+      const rock = !outside && L.rocks.some(([r, c]) => r === nr && c === nc);
+      if (outside || rock) { blocked = { step: i + 1, what: outside ? 'край поля' : 'камінь 🪨' }; renderRobot(); break; }
+      robot.pos = [nr, nc];
+      robot.trail.add(cellKey(nr, nc));
+      renderRobot();
+      sounds.move();
+      await sleep(delay);
+    }
+
+    robot.running = false;
+    const atStar = robot.pos[0] === L.star[0] && robot.pos[1] === L.star[1];
+
+    if (blocked) {
+      sounds.hint();
+      robot.msg = { tone: 'hint', text: `Ой! На кроці ${blocked.step} робот уперся в ${blocked.what}. Зміни програму і запусти ще раз.` };
+    } else if (atStar) {
+      const lastLevel = robot.level === ROBOT_LEVELS.length - 1;
+      robot.activeIdx = -1;
+      if (lastLevel) {
+        robot.done = true;
+        markDone('robot');
+        $('#robot-next').disabled = false;
+        sounds.success();
+        robot.msg = { tone: 'ok', text: 'Ура! Робот дійшов до зірочки на всіх рівнях 🎉 Натисни «Далі».' };
+      } else {
+        sounds.right();
+        robot.showNextLevel = true;
+        robot.msg = { tone: 'ok', text: `Чудово! Робот дійшов до зірочки за ${robot.program.length} кроків ⭐` };
+      }
+    } else {
+      sounds.hint();
+      robot.activeIdx = -1;
+      robot.msg = { tone: 'hint', text: 'Робот зупинився, а до зірочки ще треба дійти. Додай ще команди.' };
+    }
+    renderRobot();
+    const focusTarget = robot.done ? $('#robot-next') : robot.showNextLevel ? $('#robot-next-level') : $('#robot-run');
+    if (focusTarget) focusTarget.focus({ preventScroll: true });
+  });
+
+  /* =========================================================
+     Сертифікат
+     ========================================================= */
+  function renderCertificate() {
+    const name = $('#student-name').value.trim();
+    const l = level();
+    $('#cert-name').textContent = name || 'Дослідник';
+
+    const skills = TASKS
+      .filter(t => state.selectedKeys.has(t.key) && state.completed.has(t.key))
+      .map(t => [t.icon, typeof t.skill === 'function' ? t.skill() : t.skill]);
+    $('#cert-badges').innerHTML = TASKS
+      .filter(t => state.selectedKeys.has(t.key) && state.completed.has(t.key))
+      .map(t => `<button type="button" data-open-cert="${t.key}"
+          class="flex items-center gap-2 px-4 py-2 rounded-full border-2 font-bold ${THEMES[t.theme].zone} hover:opacity-90">
+          <span aria-hidden="true">${t.icon}</span> ${certFor(t.key).title}</button>`).join('')
+      || '<p class="text-ink/60">Пройди будь-яку категорію — і тут з’явиться сертифікат.</p>';
+    $('#cert-skills').innerHTML = skills.length
+      ? skills.map(([icon, text]) => `<li>✅ ${text} <span aria-hidden="true">${icon}</span></li>`).join('')
+      : '<li>🌱 сміливо досліджує світ логіки</li>';
+
+    const lv = $('#cert-level');
+    lv.textContent = `🏅 Виконано завдань: ${skills.length} з ${state.selectedKeys.size}` +
+      (state.selectedKeys.has('sorting') ? ` · ${l.icon} сортування: ${l.label}` : '');
+    lv.className = `inline-block rounded-full px-4 py-1 font-bold mb-4 border-2 ${THEMES[l.categories[0].theme].zone}`;
+    $('#cert-date').textContent = new Date().toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+  $('#student-name').addEventListener('input', e => { setStudentName(e.target.value); renderCertificate(); });
+  $('#print-btn').addEventListener('click', () => window.print());
+  $('#restart-btn').addEventListener('click', () => {
+    resetAll();
+    setStudentName('');
+    goToPage(0);
+  });
+
+  /* ===== Старт ===== */
+  function resetAll() {
+    state.completed.clear();
+    state.algoSolved.clear();
+    state.algoTopic = ALGO_TOPICS[0].id;
+    resetSorting();
+    resetSequence();
+    Object.keys(QUIZZES).forEach(resetQuiz);
+    resetRobot();
+    renderCarGallery();
+    setCarTab('learn', false);
+    renderTaskPicker();
+    renderCertSlots();
+  }
+
+  renderSoundToggle();
+  resetAll();
+  goToPage(0);
+})();
+</script>
+</body>
+</html>
