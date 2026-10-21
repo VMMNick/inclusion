@@ -1,0 +1,20 @@
+<div class="flex flex-wrap gap-3 mb-5" role="tablist" aria-label="Частини завдання">
+  <button type="button" role="tab" data-car-tab="learn" id="tab-learn" aria-controls="cars-learn"
+    class="px-5 py-3 rounded-full border-2 font-bold text-lg">📖 1. Знайомство</button>
+  <button type="button" role="tab" data-car-tab="quiz" id="tab-quiz" aria-controls="cars-quiz"
+    class="px-5 py-3 rounded-full border-2 font-bold text-lg">❓ 2. Вікторина</button>
+</div>
+
+<div id="cars-learn" role="tabpanel" aria-labelledby="tab-learn">
+  <div data-role="gallery" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+  <div class="mt-6 text-center">
+    <button type="button" data-car-tab="quiz"
+      class="px-8 py-4 rounded-full bg-lime-deep text-white text-lg font-extrabold hover:opacity-90">Я готовий! До вікторини ▶</button>
+  </div>
+</div>
+
+<div id="cars-quiz" role="tabpanel" aria-labelledby="tab-quiz" class="hidden">
+  <div data-role="quiz"></div>
+</div>
+
+<p class="mt-5 text-sm text-ink/60">📷 Фото завантажуються з Вікіпедії (Wikimedia Commons), тому для них потрібен інтернет. Натисни на підпис під фото, щоб побачити автора і ліцензію.</p>

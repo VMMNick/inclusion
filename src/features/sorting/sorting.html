@@ -1,0 +1,15 @@
+<fieldset class="mb-5">
+  <legend class="font-bold mb-2">Скільки коробок?</legend>
+  <div data-role="levels" class="flex flex-wrap gap-3"></div>
+</fieldset>
+
+<div data-zone="pool" role="button" tabindex="0"
+  aria-label="Нерозподілені картки. Натисни, щоб повернути обрану картку сюди."
+  class="zone rounded-3xl border-2 border-dashed border-lavender-mid bg-white p-4 mb-5 min-h-[7rem]">
+  <p class="font-bold mb-3">📦 Картки <span data-role="pool-count" class="text-ink/70"></span></p>
+  <div class="zone-items flex flex-wrap gap-3"></div>
+</div>
+
+<div data-role="zones" class="grid gap-5"></div>
+
+<div data-role="feedback" role="status" aria-live="polite" class="mt-5"></div>

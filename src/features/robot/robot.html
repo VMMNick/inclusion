@@ -1,0 +1,32 @@
+<div class="flex items-center gap-3 mb-4">
+  <div data-role="dots" class="flex gap-2" aria-hidden="true"></div>
+  <span data-role="level-label" class="font-bold"></span>
+</div>
+
+<div class="grid lg:grid-cols-2 gap-6 items-start">
+  <div data-role="grid" role="img"
+    class="grid grid-cols-5 gap-1.5 sm:gap-2 bg-lavender-soft p-2 sm:p-3 rounded-3xl border-2 border-lavender-mid w-full max-w-[26rem] mx-auto"></div>
+
+  <div>
+    <p class="font-bold mb-2">1) Натискай стрілки — так ти пишеш програму:</p>
+    <div class="grid grid-cols-4 gap-3 max-w-xs mb-5">
+      <button type="button" data-cmd="up"    aria-label="Додати крок вгору"    class="h-16 rounded-2xl bg-sky-soft border-2 border-sky-mid text-3xl hover:bg-sky-mid disabled:opacity-40">⬆️</button>
+      <button type="button" data-cmd="down"  aria-label="Додати крок вниз"     class="h-16 rounded-2xl bg-sky-soft border-2 border-sky-mid text-3xl hover:bg-sky-mid disabled:opacity-40">⬇️</button>
+      <button type="button" data-cmd="left"  aria-label="Додати крок ліворуч"  class="h-16 rounded-2xl bg-sky-soft border-2 border-sky-mid text-3xl hover:bg-sky-mid disabled:opacity-40">⬅️</button>
+      <button type="button" data-cmd="right" aria-label="Додати крок праворуч" class="h-16 rounded-2xl bg-sky-soft border-2 border-sky-mid text-3xl hover:bg-sky-mid disabled:opacity-40">➡️</button>
+    </div>
+
+    <p class="font-bold mb-2">Програма робота (кроків: <span data-role="count">0</span>):</p>
+    <ol data-role="program" aria-label="Програма робота"
+      class="flex flex-wrap gap-2 min-h-[4rem] p-3 bg-white rounded-2xl border-2 border-dashed border-lavender-mid mb-4"></ol>
+
+    <p class="font-bold mb-2">2) Запусти робота:</p>
+    <div class="flex flex-wrap gap-3">
+      <button data-action="run" type="button" class="px-6 py-3 rounded-full bg-mint-deep text-white font-extrabold hover:opacity-90 disabled:opacity-40">▶ Запустити</button>
+      <button data-action="undo" type="button" class="px-5 py-3 rounded-full bg-white border-2 border-peach-mid font-bold hover:bg-peach-soft disabled:opacity-40">↶ Прибрати останній</button>
+      <button data-action="clear" type="button" class="px-5 py-3 rounded-full bg-white border-2 border-peach-mid font-bold hover:bg-peach-soft disabled:opacity-40">🧹 Очистити</button>
+    </div>
+  </div>
+</div>
+
+<div data-role="feedback" role="status" aria-live="polite" class="mt-5"></div>

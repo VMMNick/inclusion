@@ -1,0 +1,23 @@
+<section id="sec-welcome" aria-labelledby="h-welcome" class="step-section">
+  <div class="bg-white rounded-4xl border-2 border-lavender-mid p-6 sm:p-10 text-center shadow-sm">
+    <div class="text-7xl mb-4" aria-hidden="true">🤖</div>
+    <h1 id="h-welcome" tabindex="-1" class="text-3xl sm:text-4xl font-extrabold mb-4">Привіт, досліднику!</h1>
+    <p class="text-xl mb-6 max-w-2xl mx-auto">Обери завдання, які хочеш пройти. Натисни на картку, щоб увімкнути або вимкнути її. Поспішати не треба — працюй у своєму темпі.</p>
+
+    <div class="flex flex-wrap justify-center gap-3 mb-5">
+      <button data-action="pick-all" type="button" class="px-5 py-2 rounded-full bg-white border-2 border-mint-mid font-bold hover:bg-mint-soft">✅ Обрати всі</button>
+      <button data-action="pick-none" type="button" class="px-5 py-2 rounded-full bg-white border-2 border-peach-mid font-bold hover:bg-peach-soft">⬜ Зняти всі</button>
+    </div>
+
+    <div data-role="picker" role="group" aria-label="Оберіть завдання"
+      class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-w-6xl mx-auto mb-5 text-left"></div>
+
+    <p data-role="count" class="text-lg font-bold mb-4" aria-live="polite"></p>
+    <p class="text-base mb-6 text-ink/80">Звук можна увімкнути кнопкою вгорі 🔈</p>
+
+    <button data-action="start" type="button"
+      class="px-10 py-4 rounded-full bg-lavender-deep text-white text-xl font-extrabold hover:opacity-90 shadow disabled:opacity-40 disabled:cursor-not-allowed">
+      Почати ▶
+    </button>
+  </div>
+</section>

@@ -1,0 +1,26 @@
+{
+  "name": "logic-lab",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Лабораторія логіки та сортування — інклюзивний навчальний вебдодаток для 3–5 класів",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.6.1",
+    "jsdom": "^25.0.1",
+    "postcss": "^8.5.31",
+    "tailwindcss": "^3.4.19",
+    "vite": "^5.4.21",
+    "vite-plugin-singlefile": "^2.3.4",
+    "vitest": "^2.1.9"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

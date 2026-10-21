@@ -1,0 +1,85 @@
+/* Шрифт Nunito (вбудований, працює без інтернету). Ліцензія: src/assets/fonts/OFL-LICENSE.txt */
+@font-face {
+  font-family: 'Nunito Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 1000;
+  src: url('../assets/fonts/nunito-cyrillic-wght-normal.woff2') format('woff2-variations');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Nunito Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 1000;
+  src: url('../assets/fonts/nunito-latin-wght-normal.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
+    U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :focus { outline: none; }
+  :focus-visible {
+    outline: 4px solid theme('colors.lavender.deep');
+    outline-offset: 3px;
+    border-radius: 1rem;
+  }
+  /* Заголовок отримує фокус програмно (для екранних читачів) — рамка тут не потрібна */
+  h1[tabindex="-1"]:focus-visible, h2[tabindex="-1"]:focus-visible { outline: none; }
+  /* Довгі назви не виходять за рамки */
+  h1, h2, h3, p, li, button, label, a { overflow-wrap: break-word; }
+}
+
+@layer components {
+  /* Картки, які можна обирати й перетягувати */
+  .card {
+    transition: transform .15s ease, box-shadow .15s ease, background-color .15s ease;
+    touch-action: manipulation;
+    min-width: 0;
+  }
+  .card:hover { transform: translateY(-2px); }
+  .card.is-selected {
+    box-shadow: 0 0 0 4px theme('colors.lavender.deep');
+    background-color: theme('colors.lavender.soft');
+  }
+  .card.is-dragging { opacity: .5; }
+
+  /* М'яка позначка «варто переглянути» замість червоної помилки */
+  .needs-review {
+    border: 3px dashed #D9B44A !important;
+    background-color: theme('colors.butter.soft') !important;
+  }
+
+  .grid > * { min-width: 0; }
+
+  /* Зони сортування */
+  .zone { transition: background-color .15s ease, border-color .15s ease, filter .15s ease; }
+  .zone.is-over { border-style: solid; filter: brightness(0.96); }
+  .zone.is-target { border-style: solid; }
+
+  .robot-cell { transition: background-color .2s ease; }
+
+  /* Сертифікати: шрифт підлаштовується під ширину, текст переноситься */
+  .cert-title { font-size: clamp(1.35rem, 3.5vw + .6rem, 2.25rem); line-height: 1.2; hyphens: auto; overflow-wrap: break-word; }
+  .cert-name-line { font-size: clamp(1.25rem, 3vw + .6rem, 1.875rem); line-height: 1.25; min-height: 2.75rem; overflow-wrap: anywhere; }
+  .cert-decor { display: flex; flex-wrap: wrap; justify-content: center; gap: .35rem .6rem; font-size: clamp(1.1rem, 2.5vw + .5rem, 1.75rem); }
+}
+
+/* Повага до налаштування «менше руху» */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  .card:hover { transform: none; }
+}
+
+/* Друк: лише сертифікат */
+@media print {
+  header, footer, .no-print { display: none !important; }
+  body { background: #fff !important; }
+  main { padding: 0 !important; }
+  body.modal-open > header, body.modal-open > main, body.modal-open > footer { display: none !important; }
+  body.modal-open #cert-modal { position: static !important; background: none !important; padding: 0 !important; overflow: visible !important; }
+}

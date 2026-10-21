@@ -1,0 +1,30 @@
+<section id="sec-award" aria-labelledby="h-award" class="step-section hidden">
+  <div class="no-print mb-5 max-w-2xl mx-auto">
+    <label for="student-name" class="block text-lg font-bold mb-2">✏️ Кому видається нагорода:</label>
+    <p class="text-base text-ink/70 mb-2">Впиши ім’я та прізвище. Можна залишити порожнім — тоді на сертифікаті буде лінія, щоб вписати ім’я ручкою.</p>
+    <input id="student-name" type="text" maxlength="60" autocomplete="off"
+      class="w-full text-xl px-5 py-3 rounded-2xl border-2 border-lavender-mid bg-white focus-visible:border-lavender-deep"
+      placeholder="Наприклад: Олеся Коваленко" />
+  </div>
+
+  <div class="max-w-2xl mx-auto bg-white rounded-4xl border-[6px] border-double border-butter-mid p-8 sm:p-12 text-center shadow-sm">
+    <div class="text-7xl mb-3" aria-hidden="true">🏅</div>
+    <p class="uppercase tracking-widest font-bold text-butter-deep mb-2">Нагорода</p>
+    <h2 id="h-award" tabindex="-1" class="cert-title font-extrabold mb-4">Магістр Логіки</h2>
+    <p class="text-lg mb-2">Цю нагороду отримує</p>
+    <p data-role="name" class="cert-name-line font-extrabold text-lavender-deep border-b-2 border-lavender-mid block w-full max-w-md mx-auto pb-1 mb-6"></p>
+    <ul data-role="skills" class="text-lg space-y-1 mb-4 text-left inline-block"></ul>
+    <div><p data-role="summary" class="inline-block max-w-full rounded-3xl px-4 py-1 font-bold mb-4 border-2 bg-butter-soft border-butter-mid"></p></div>
+    <p data-role="date" class="text-base text-ink/70"></p>
+  </div>
+
+  <div class="no-print mt-8 max-w-3xl mx-auto">
+    <h3 class="text-xl font-extrabold mb-3 text-center">📜 Твої сертифікати за категоріями</h3>
+    <div data-role="badges" class="flex flex-wrap gap-3 justify-center"></div>
+  </div>
+  <div class="no-print mt-8 flex flex-wrap gap-3 justify-center">
+    <button type="button" data-nav="prev" class="px-6 py-3 rounded-full bg-white border-2 border-lavender-mid font-bold hover:bg-lavender-soft">◀ Назад</button>
+    <button data-action="print" type="button" class="px-6 py-3 rounded-full bg-butter-mid font-extrabold hover:bg-butter-soft border-2 border-butter-mid">🖨️ Надрукувати</button>
+    <button data-action="restart" type="button" class="px-6 py-3 rounded-full bg-lavender-deep text-white font-extrabold hover:opacity-90">🔁 Пройти ще раз</button>
+  </div>
+</section>
