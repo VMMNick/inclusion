@@ -7,6 +7,8 @@ import { ALGO_TOPICS } from '../../data/algorithm-topics.js';
 import { $, focusQuietly } from '../../core/dom.js';
 import { sounds } from '../../core/audio.js';
 import { setFeedback } from '../../ui/feedback.js';
+import { reportCorrect, reportHint } from '../../core/session.js';
+import { pop } from '../../ui/effects.js';
 
 const ACTIONS = `
   <button type="button" data-action="reset" class="px-6 py-3 rounded-full bg-white border-2 border-peach-mid font-bold hover:bg-peach-soft">↺ Почати знову</button>
@@ -118,6 +120,7 @@ export default {
       if (correct === total) {
         sounds.success();
         state.solved.add(state.topicId);
+        reportCorrect($('[data-action="check"]', section));
         complete();
         renderTopics();
         const more = ALGO_TOPICS.length > state.solved.size;
@@ -126,6 +129,7 @@ export default {
         focusQuietly(nextButton);
       } else {
         sounds.hint();
+        reportHint();
         say({ tone: 'hint', text: `На своїх місцях: <b>${correct} з ${total}</b> ✅. Кроки з 🔍 спробуй пересунути.
           <br><span class="text-base">Підказка: що треба зробити найпершим?</span>` });
       }
@@ -153,6 +157,7 @@ export default {
       let target = $(`[data-move="${dir}"][data-id="${id}"]`, body);
       if (!target || target.disabled) target = $(`[data-move="${dir === 'up' ? 'down' : 'up'}"][data-id="${id}"]`, body);
       focusQuietly(target);
+      pop(target?.closest('li'));
     });
 
     $('[data-action="check"]', section).addEventListener('click', check);

@@ -9,6 +9,8 @@ import { $, $$, focusQuietly } from '../../core/dom.js';
 import { sounds } from '../../core/audio.js';
 import { themeOf } from '../../config/themes.js';
 import { setFeedback } from '../../ui/feedback.js';
+import { reportCorrect, reportHint } from '../../core/session.js';
+import { pop } from '../../ui/effects.js';
 
 const ACTIONS = `
   <button type="button" data-action="reset" class="px-6 py-3 rounded-full bg-white border-2 border-peach-mid font-bold hover:bg-peach-soft">↺ Почати знову</button>
@@ -138,8 +140,9 @@ export default {
       state.selected = null;
       state.review.delete(id);
       renderCards();
-      if (changed) sounds.place();
-      focusQuietly($(`[data-card="${id}"]`, body));
+      const placed = $(`[data-card="${id}"]`, body);
+      if (changed) { sounds.place(); pop(placed); }
+      focusQuietly(placed);
       say(null);
     }
 
@@ -147,6 +150,7 @@ export default {
       const result = checkPlacements(level(), state.placements);
       if (result.left.length) {
         sounds.hint();
+        reportHint();
         say({ tone: 'hint', text: `Ще залишились картки: <b>${result.left.length}</b>. Розклади їх у коробки 🙂` });
         return;
       }
@@ -154,11 +158,13 @@ export default {
       renderCards();
       if (result.solved) {
         sounds.success();
+        reportCorrect($('[data-action="check"]', section));
         complete();
         say({ tone: 'ok', text: 'Чудово! Усі картки на своїх місцях 🎉 Натисни «Далі».' });
         focusQuietly(nextButton);
       } else {
         sounds.hint();
+        reportHint();
         say({ tone: 'hint', text: `Майже! Картки з позначкою 🔍 (${result.wrong.length}) варто перенести в іншу коробку.
           <br><span class="text-base">Підказка: прочитай опис під назвою кожної коробки.</span>` });
       }

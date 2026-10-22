@@ -30,6 +30,7 @@ beforeAll(async () => {
   window.scrollTo = () => {};
   window.print = vi.fn();
   Element.prototype.scrollIntoView = () => {};
+  HTMLCanvasElement.prototype.getContext = () => null;   // у jsdom немає canvas — конфеті просто пропускається
   globalThis.fetch = vi.fn(async () => { throw new Error('offline'); });
 
   const { createApp } = await import('../src/app.js');
@@ -38,8 +39,10 @@ beforeAll(async () => {
 });
 
 describe('застосунок', () => {
-  it('стартує з вибором усіх завдань', () => {
+  it('стартує з вибором усіх завдань, Робо вітається', () => {
     expect(visibleSection()).toBe('sec-welcome');
+    expect($('#mascot [data-role="text"]').textContent).toContain('Привіт');
+    expect($('#star-count').textContent).toBe('0');
     expect($$('[data-task-key]').length).toBe(app.tasks.length);
     expect($('[data-role="count"]').textContent).toContain(`${app.tasks.length} з ${app.tasks.length}`);
   });
@@ -98,6 +101,24 @@ describe('застосунок', () => {
     expect(sec.querySelector('[data-nav="next"]').disabled).toBe(false);
     click(sec.querySelector('[data-nav="next"]'));
     expect(visibleSection()).toBe('sec-odd');
+  });
+
+  it('вікторина: підказка прибирає зайвий варіант, але лишає щонайменше два', () => {
+    const root = $('#sec-odd [data-role="quiz"]');
+    click(root.querySelector('[data-quiz-hint]'));
+    click(root.querySelector('[data-quiz-hint]'));
+    expect(root.querySelectorAll('.option-hidden').length).toBe(2);
+    expect(root.querySelector('[data-quiz-hint]')).toBeNull();
+    expect(root.querySelectorAll('[data-opt]:not([disabled])').length).toBe(2);
+  });
+
+  it('вікторина: неправильна відповідь — підтримка Робо, правильна — зірочка', () => {
+    const root = $('#sec-odd [data-role="quiz"]');
+    const before = app.session.stars;
+    click(root.querySelector('[data-opt]:not([disabled]):not([data-opt="apple"])'));
+    expect($('#mascot [data-role="bubble"]').classList.contains('hidden')).toBe(false);
+    click(root.querySelector('[data-opt="apple"]'));
+    expect(app.session.stars).toBe(before + 1);
   });
 
   it('вікторина: неправильна відповідь не блокує, правильна веде далі', () => {
@@ -162,8 +183,25 @@ describe('застосунок', () => {
     expect($$('#sec-award [data-open-cert]').length).toBe(6);
   });
 
-  it('«Пройти ще раз» скидає прогрес і ім’я', () => {
+  it('Робо розповідає цікавинку на натискання', () => {
+    click('#mascot [data-role="robo"]');
+    expect($('#mascot [data-role="text"]').textContent.length).toBeGreaterThan(10);
+    click('#mascot [data-role="close"]');
+    expect($('#mascot [data-role="bubble"]').classList.contains('hidden')).toBe(true);
+  });
+
+  it('перемикач «Ефекти» вимикає реакції Робо', () => {
+    click('#effects-toggle');
+    expect(app.session.effectsEnabled).toBe(false);
+    expect($('#effects-label').textContent).toContain('вимкнено');
+    click('#effects-toggle');
+    expect(app.session.effectsEnabled).toBe(true);
+  });
+
+  it('«Пройти ще раз» скидає прогрес, зірочки і ім’я', () => {
+    expect(app.session.stars).toBeGreaterThan(0);
     click('[data-action="restart"]');
+    expect(app.session.stars).toBe(0);
     expect(visibleSection()).toBe('sec-welcome');
     expect(app.session.completed.size).toBe(0);
     expect(app.session.studentName).toBe('');

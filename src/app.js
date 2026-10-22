@@ -12,6 +12,8 @@ import { createWelcome } from './features/welcome/welcome.js';
 import { createFinalAward } from './features/certificates/final-award.js';
 import { mountCertificateBanner } from './features/certificates/certificate-banner.js';
 import { mountCertificateModal } from './features/certificates/certificate-modal.js';
+import { mountEffects } from './ui/effects.js';
+import { mountMascot } from './features/mascot/mascot.js';
 
 /** @param {import('./types.js').TaskModule[]} tasks */
 export function createApp(tasks) {
@@ -53,6 +55,8 @@ export function createApp(tasks) {
   const router = createRouter(pages);
 
   mountSoundToggle();
+  mountEffects();
+  mountMascot();
   mountCertificateModal(taskByKey);
 
   // Панель кроків оновлюється, коли щось змінюється

@@ -7,7 +7,7 @@ import { ROBOT_LEVELS, DIRS, ROBOT_MAX_STEPS } from '../../data/robot-levels.js'
 import { runProgram } from './robot-engine.js';
 import { $, $$, sleep, prefersReducedMotion, focusQuietly } from '../../core/dom.js';
 import { sounds } from '../../core/audio.js';
-import { setBusy } from '../../core/session.js';
+import { setBusy, reportCorrect, reportHint } from '../../core/session.js';
 import { feedbackHTML, progressDotsHTML } from '../../ui/feedback.js';
 
 const cellKey = (r, c) => `${r},${c}`;
@@ -86,8 +86,9 @@ export default {
           const rock = isRock(r, c);
           const trail = state.trail.has(cellKey(r, c));
           const bg = rock ? 'bg-peach-mid' : star ? 'bg-butter-mid' : trail ? 'bg-lavender-mid' : 'bg-white';
-          const content = here ? (star ? '🤖<span class="text-base">⭐</span>' : '🤖') : star ? '⭐' : rock ? '🪨' : '';
-          cells += `<div class="robot-cell aspect-square rounded-xl ${bg} flex items-center justify-center text-2xl sm:text-4xl">${content}</div>`;
+          const robotFace = state.running ? '<span class="fx-hop">🤖</span>' : '🤖';   // «стрибок» на кожному кроці
+          const content = here ? (star ? `${robotFace}<span class="text-base">⭐</span>` : robotFace) : star ? '⭐' : rock ? '🪨' : '';
+          cells += `<div ${here ? 'data-robot-here' : ''} class="robot-cell aspect-square rounded-xl ${bg} flex items-center justify-center text-2xl sm:text-4xl">${content}</div>`;
         }
       }
       el.grid.style.gridTemplateColumns = `repeat(${L.size}, minmax(0, 1fr))`;
@@ -163,10 +164,12 @@ export default {
 
       if (result.blocked) {
         sounds.hint();
+        reportHint();
         const what = result.blocked.reason === 'edge' ? 'край поля' : 'камінь 🪨';
         state.msg = { tone: 'hint', text: `Ой! На кроці ${result.blocked.step} робот уперся в ${what}. Зміни програму і запусти ще раз.` };
       } else if (result.reachedStar) {
         state.activeIdx = -1;
+        reportCorrect($('[data-robot-here]', body));
         if (state.level === ROBOT_LEVELS.length - 1) {
           state.done = true;
           sounds.success();
@@ -179,6 +182,7 @@ export default {
         }
       } else {
         sounds.hint();
+        reportHint();
         state.activeIdx = -1;
         state.msg = { tone: 'hint', text: 'Робот зупинився, а до зірочки ще треба дійти. Додай ще команди.' };
       }

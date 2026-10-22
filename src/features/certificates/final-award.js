@@ -32,7 +32,7 @@ export function createFinalAward(tasks, { onRestart }) {
       : '<li>🌱 сміливо досліджує світ логіки</li>';
 
     const notes = earned.filter(t => t.awardNote).map(t => t.awardNote());
-    el.summary.textContent = [`🏅 Виконано завдань: ${earned.length} з ${session.selected.size}`, ...notes].join(' · ');
+    el.summary.textContent = [`🏅 Виконано завдань: ${earned.length} з ${session.selected.size}`, `⭐ Зірочок: ${session.stars}`, ...notes].join(' · ');
 
     el.badges.innerHTML = earned.map(t => `<button type="button" data-open-cert="${t.key}"
         class="flex items-center gap-2 px-4 py-2 rounded-full border-2 font-bold ${themeOf(t.theme).zone} hover:opacity-90">

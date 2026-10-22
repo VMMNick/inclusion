@@ -2,9 +2,11 @@
  * Рушій вікторини: задачки по одній, без автопереходів.
  * Неправильний варіант м'яко позначається й вимикається — дитина рано чи пізно знайде правильний.
  * Наступна задачка відкривається лише кнопкою.
+ * Кнопка «💡 Підказка» прибирає один зайвий варіант (без жодних штрафів).
  */
 import { $, focusQuietly } from '../../core/dom.js';
 import { sounds } from '../../core/audio.js';
+import { reportCorrect, reportHint } from '../../core/session.js';
 import { themeOf } from '../../config/themes.js';
 import { feedbackHTML, progressDotsHTML } from '../../ui/feedback.js';
 
@@ -20,7 +22,7 @@ export function createQuiz({ root, config, onComplete, getFocusAfterComplete, re
   let st;
 
   function reset() {
-    st = { round: 0, solved: false, wrong: new Set(), done: false, msg: null };
+    st = { round: 0, solved: false, wrong: new Set(), hidden: new Set(), done: false, msg: null };
     render();
   }
 
@@ -45,23 +47,36 @@ export function createQuiz({ root, config, onComplete, getFocusAfterComplete, re
   function optionsHTML(r) {
     return r.options.map(o => {
       const isWrong = st.wrong.has(o.id);
+      const isHidden = st.hidden.has(o.id);
       const isRight = st.solved && o.id === r.correct;
       const look = isRight ? 'bg-mint-soft border-mint-deep border-4'
         : isWrong ? 'needs-review opacity-70'
+        : isHidden ? 'option-hidden bg-white border-lavender-mid border-dashed'
         : 'bg-white border-lavender-mid hover:bg-lavender-soft';
-      const disabled = st.solved || isWrong;
+      const disabled = st.solved || isWrong || isHidden;
+      const note = isRight ? ', правильно' : isWrong ? ', спробуй іншу відповідь' : isHidden ? ', прибрано підказкою' : '';
       return `<button type="button" data-opt="${o.id}" ${disabled ? 'disabled' : ''}
-          aria-label="${o.label}${isRight ? ', правильно' : ''}${isWrong ? ', спробуй іншу відповідь' : ''}"
+          aria-label="${o.label}${note}"
           class="card flex flex-col items-center justify-center gap-2 border-2 ${look} rounded-3xl p-4 ${o.emoji ? 'min-h-[8rem]' : 'min-h-[5rem]'} font-bold shadow-sm disabled:cursor-default">
           ${o.emoji ? `<span class="text-5xl font-extrabold" aria-hidden="true">${o.emoji}</span>` : ''}
-          <span class="${o.emoji ? 'text-lg' : 'text-xl sm:text-2xl font-extrabold'} text-center">${o.label}</span>
+          <span class="option-label ${o.emoji ? 'text-lg' : 'text-xl sm:text-2xl font-extrabold'} text-center">${o.label}</span>
           ${isRight ? '<span aria-hidden="true">✅</span>' : ''}
         </button>`;
     }).join('');
   }
 
+  /** Варіанти, які підказка ще може прибрати (лишаємо щонайменше два). */
+  function removableOptions(r) {
+    const active = r.options.filter(o => !st.wrong.has(o.id) && !st.hidden.has(o.id));
+    return active.length > 2 ? active.filter(o => o.id !== r.correct) : [];
+  }
+
   function render() {
     const r = config.rounds[st.round];
+    const canHint = !st.solved && removableOptions(r).length > 0;
+    const hintBtn = canHint
+      ? '<button type="button" data-quiz-hint class="mt-5 px-5 py-2 rounded-full bg-white border-2 border-butter-mid font-bold hover:bg-butter-soft">💡 Підказка: прибрати один зайвий варіант</button>'
+      : '';
     const n = r.options.length;
     const cols = n === 2 ? 'grid-cols-2' : n === 3 ? 'grid-cols-3' : 'grid-cols-2 sm:grid-cols-4';
     const dots = progressDotsHTML(config.rounds.length, st.round, i => i < st.round || (i === st.round && st.solved));
@@ -79,6 +94,7 @@ export function createQuiz({ root, config, onComplete, getFocusAfterComplete, re
         <p class="text-xl sm:text-2xl font-extrabold">${r.prompt}</p>
         ${sequenceHTML(r)}
         <div class="grid ${cols} gap-3 sm:gap-4 mt-5 max-w-3xl mx-auto">${optionsHTML(r)}</div>
+        ${hintBtn}
       </div>
       <div class="mt-5" role="status" aria-live="polite">${feedbackHTML(st.msg)}${nextRound}</div>`;
   }
@@ -88,17 +104,20 @@ export function createQuiz({ root, config, onComplete, getFocusAfterComplete, re
     if (optId === r.correct) {
       st.solved = true;
       const last = st.round === config.rounds.length - 1;
+      const correctEl = () => $(`[data-opt="${r.correct}"]`, root);
       if (last) {
         st.done = true;
         sounds.success();
         st.msg = { tone: 'ok', text: `${r.explain}<br>Усі задачки розв’язано! 🎉 Натисни «Далі».` };
         render();
+        reportCorrect(correctEl());
         onComplete();
         focusQuietly(getFocusAfterComplete ? getFocusAfterComplete() : null);
       } else {
         sounds.right();
         st.msg = { tone: 'ok', text: `Правильно! ${r.explain}` };
         render();
+        reportCorrect(correctEl());
         focusQuietly($('[data-quiz-next]', root));
       }
     } else {
@@ -106,14 +125,28 @@ export function createQuiz({ root, config, onComplete, getFocusAfterComplete, re
       sounds.hint();
       st.msg = { tone: 'hint', text: `Спробуй ще раз. ${config.hint}` };
       render();
+      reportHint();
       focusQuietly($('[data-opt]:not([disabled])', root));
     }
+  }
+
+  /** Прибрати один зайвий варіант (детерміновано — перший із можливих). */
+  function useHint() {
+    const r = config.rounds[st.round];
+    const [option] = removableOptions(r);
+    if (!option) return;
+    st.hidden.add(option.id);
+    sounds.select();
+    st.msg = { tone: 'info', text: `Підказка: «${option.label}» точно не підходить 🙈` };
+    render();
+    focusQuietly($('[data-quiz-hint]', root) || $('[data-opt]:not([disabled])', root));
   }
 
   function nextRound() {
     st.round += 1;
     st.solved = false;
     st.wrong = new Set();
+    st.hidden = new Set();
     st.msg = null;
     render();
     focusQuietly($('[data-opt]', root));
@@ -122,7 +155,8 @@ export function createQuiz({ root, config, onComplete, getFocusAfterComplete, re
   root.addEventListener('click', e => {
     const opt = e.target.closest('[data-opt]');
     if (opt && !opt.disabled) { answer(opt.dataset.opt); return; }
-    if (e.target.closest('[data-quiz-next]')) nextRound();
+    if (e.target.closest('[data-quiz-next]')) { nextRound(); return; }
+    if (e.target.closest('[data-quiz-hint]')) useHint();
   });
 
   reset();

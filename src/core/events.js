@@ -7,6 +7,9 @@
  *   'name:changed'    { name }  — змінилось ім’я на сертифікаті
  *   'selection:changed'         — змінився набір обраних завдань
  *   'page:changed'    { index } — відкрито інший екран
+ *   'answer:correct'  { target } — правильна відповідь (іскорки, +1 ⭐, похвала Робо)
+ *   'answer:hint'               — невдала спроба (Робо підбадьорює)
+ *   'stars:changed'   { stars, added, target } — змінилась кількість зірочок
  */
 const listeners = new Map();
 
